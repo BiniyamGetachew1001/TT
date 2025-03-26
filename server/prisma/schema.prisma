@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bookmarks Bookmark[]
+}
+
+model BookSummary {
+  id          String     @id @default(uuid())
+  title       String
+  author      String
+  description String
+  coverImage  String
+  readTime    String
+  category    String
+  summary     String
+  keyPoints   String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bookmarks   Bookmark[]
+}
+
+model BusinessPlan {
+  id          String     @id @default(uuid())
+  title       String
+  industry    String
+  description String
+  coverImage  String
+  author      String
+  readTime    String
+  price       Float
+  sections    Json
+  keyFeatures String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bookmarks   Bookmark[]
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // 'book-summary' or 'business-plan'
+  itemId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  book      BookSummary? @relation(fields: [itemId], references: [id])
+  plan      BusinessPlan? @relation(fields: [itemId], references: [id])
+
+  @@unique([userId, type, itemId])
+} 
