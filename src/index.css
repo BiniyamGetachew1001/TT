@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark-brown: #2d1e14;
+  --medium-brown: #4a2e1c;
+  --light-brown: #7a4528;
+  --gold: #c9a52c;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  @apply bg-[#2d1e14] text-white m-0 p-0;
+}
+
+.sidebar-item {
+  @apply flex items-center gap-3 py-3 px-4 text-white hover:bg-[#4a2e1c] rounded-md transition-all duration-300 hover:scale-105 hover:pl-5;
+}
+
+.sidebar-item.active {
+  @apply bg-[#4a2e1c];
+}
+
+.main-gradient {
+  background: linear-gradient(to bottom, #2d1e14 90%, #3a2819);
+}
+
+.gold-text {
+  @apply text-[#c9a52c];
+}
+
+.gold-button {
+  @apply bg-[#c9a52c] hover:bg-[#b89225] text-[#2d1e14] font-medium py-2 px-6 rounded-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(201,165,44,0.5)] hover:scale-105;
+}
+
+.secondary-button {
+  @apply bg-[#3a2819] hover:bg-[#4a2e1c] text-white font-medium py-2 px-6 rounded-md transition-all duration-300 border border-[#7a4528] hover:shadow-[0_0_15px_rgba(122,69,40,0.5)] hover:scale-105;
+}
+
+/* Glassmorphism effects */
+.glass-card {
+  @apply bg-[#2d1e14]/80 backdrop-blur-sm border border-[#7a4528]/30 rounded-xl shadow-lg;
+}
+
+.glass-navbar {
+  @apply bg-[#2d1e14]/90 backdrop-blur-md border-b border-[#7a4528]/30;
+}
+
+.glass-button {
+  @apply bg-[#3a2819]/80 backdrop-blur-sm border border-[#7a4528]/50 hover:bg-[#4a2e1c]/90 hover:border-[#c9a52c]/50 hover:shadow-[0_0_15px_rgba(122,69,40,0.3)] transition-all duration-300 hover:scale-105;
+}
+
+.glass-input {
+  @apply bg-[#3a2819]/80 backdrop-blur-sm border border-[#7a4528]/50 focus:border-[#c9a52c]/70 focus:outline-none focus:ring-1 focus:ring-[#c9a52c] transition-all duration-300;
+}
+
+.tabs-container {
+  @apply bg-[#3a2819]/70 backdrop-blur-sm p-1 rounded-full flex mb-6;
+}
+
+.tab-button {
+  @apply px-4 py-2 rounded-full text-sm font-medium transition-all duration-300;
+}
+
+.tab-button.active {
+  @apply bg-[#2d1e14] text-[#c9a52c];
+}
+
+.tab-button:not(.active) {
+  @apply text-gray-300 hover:bg-[#4a2e1c]/50;
+}
+
+.settings-card {
+  @apply glass-card p-6 mb-6;
+}
+
+/* Mobile sidebar animation */
+@keyframes slidein {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideout {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.sidebar-slide-in {
+  animation: slidein 0.3s forwards ease-out;
+}
+
+.sidebar-slide-out {
+  animation: slideout 0.3s forwards ease-in;
+}
+
+/* Input glow effect */
+.input-glow:focus {
+  box-shadow: 0 0 10px rgba(201, 165, 44, 0.5);
+}
+
+/* Reading page styles */
+.reading-container {
+  @apply max-w-3xl mx-auto px-6 md:px-10 py-10;
+}
+
+.reading-content {
+  @apply text-lg text-gray-200 leading-relaxed;
+}
+
+.reading-content p {
+  @apply mb-6;
+}
+
+.reading-content h2 {
+  @apply text-2xl font-bold mb-4 mt-8 text-[#c9a52c];
+}
+
+.reading-content h3 {
+  @apply text-xl font-bold mb-3 mt-6;
+}
+
+.reading-content ul, .reading-content ol {
+  @apply mb-6 ml-6;
+}
+
+.reading-content li {
+  @apply mb-2;
+}
+
+.reading-content blockquote {
+  @apply bg-[#3a2819] border-l-4 border-[#c9a52c] px-4 py-3 my-6 rounded-r-md italic;
+}
+
+.font-size-small {
+  @apply text-base;
+}
+
+.font-size-medium {
+  @apply text-lg;
+}
+
+.font-size-large {
+  @apply text-xl;
+}
+
+.chapter-nav {
+  @apply fixed right-6 top-1/2 -translate-y-1/2 bg-[#2d1e14]/80 backdrop-blur-sm border border-[#7a4528]/30 rounded-lg py-2 px-1;
+}
+
+.chapter-nav-item {
+  @apply p-2 hover:bg-[#3a2819] rounded-md cursor-pointer transition-colors;
+}
+
+.chapter-nav-item.active {
+  @apply bg-[#3a2819] text-[#c9a52c];
+}
+
+.reading-toolbar {
+  @apply fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#2d1e14]/90 backdrop-blur-md border border-[#7a4528]/50 rounded-full py-2 px-6 flex items-center gap-4;
+}
+
+.toolbar-button {
+  @apply p-2 rounded-full hover:bg-[#3a2819] transition-colors;
+}
+
+.toolbar-button.active {
+  @apply bg-[#3a2819] text-[#c9a52c];
+}
+
+.chapter-header {
+  @apply bg-[#3a2819] p-6 mb-8 rounded-xl;
+}
