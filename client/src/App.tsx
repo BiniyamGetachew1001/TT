@@ -7,11 +7,16 @@ import ReadingPage from './pages/ReadingPage';
 import BookmarksPage from './pages/BookmarksPage';
 import BusinessPlansPage from './pages/BusinessPlansPage';
 import BusinessPlanDetailPage from './pages/BusinessPlanDetailPage';
+import SupabaseTest from './components/SupabaseTest';
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Test route outside of Layout */}
+        <Route path="/test" element={<SupabaseTest />} />
+        
+        {/* Main app routes with Layout */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/book-summaries" element={<BookSummariesPage />} />
