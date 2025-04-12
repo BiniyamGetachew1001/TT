@@ -1,30 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  IconButton,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Typography,
-  Box,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
-} from '@mui/material';
-import { Edit, Delete, Visibility } from '@mui/icons-material';
+import { Edit, Trash2, Eye } from 'lucide-react';
 
 interface BlogPostListProps {
   posts: any[];
@@ -37,12 +13,12 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const handleDeleteClick = (id: string) => {
     setPostToDelete(id);
     setDeleteDialogOpen(true);
   };
-  
+
   const handleConfirmDelete = () => {
     if (postToDelete) {
       onDelete(postToDelete);
@@ -50,12 +26,12 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
       setPostToDelete(null);
     }
   };
-  
+
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
     setPostToDelete(null);
   };
-  
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not published';
     const date = new Date(dateString);
@@ -65,7 +41,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
       day: 'numeric'
     });
   };
-  
+
   const filteredPosts = posts.filter(post => {
     const matchesCategory = filterCategory ? post.category === filterCategory : true;
     const matchesStatus = filterStatus ? post.status === filterStatus : true;
@@ -73,155 +49,157 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
       ? post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
       : true;
-    
+
     return matchesCategory && matchesStatus && matchesSearch;
   });
-  
+
   const categories = [...new Set(posts.map(post => post.category))];
-  
+
   return (
     <div>
-      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        <TextField
-          label="Search"
-          variant="outlined"
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ flexGrow: 1, minWidth: '200px' }}
-        />
-        
-        <FormControl size="small" sx={{ minWidth: '150px' }}>
-          <InputLabel>Category</InputLabel>
-          <Select
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <div className="flex-grow min-w-[200px]">
+          <input
+            type="text"
+            placeholder="Search posts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="admin-input w-full"
+          />
+        </div>
+
+        <div className="min-w-[150px]">
+          <select
             value={filterCategory}
-            label="Category"
             onChange={(e) => setFilterCategory(e.target.value)}
+            className="admin-select w-full"
           >
-            <MenuItem value="">All Categories</MenuItem>
+            <option value="">All Categories</option>
             {categories.map(category => (
-              <MenuItem key={category} value={category}>{category}</MenuItem>
+              <option key={category} value={category}>{category}</option>
             ))}
-          </Select>
-        </FormControl>
-        
-        <FormControl size="small" sx={{ minWidth: '150px' }}>
-          <InputLabel>Status</InputLabel>
-          <Select
+          </select>
+        </div>
+
+        <div className="min-w-[150px]">
+          <select
             value={filterStatus}
-            label="Status"
             onChange={(e) => setFilterStatus(e.target.value)}
+            className="admin-select w-full"
           >
-            <MenuItem value="">All Statuses</MenuItem>
-            <MenuItem value="draft">Draft</MenuItem>
-            <MenuItem value="published">Published</MenuItem>
-          </Select>
-        </FormControl>
-        
-        <Button
-          variant="contained"
-          color="primary"
-          component={Link}
+            <option value="">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
+        </div>
+
+        <Link
           to="/blog-posts/new"
-          sx={{ ml: 'auto' }}
+          className="gold-button ml-auto"
         >
           Add New Post
-        </Button>
-      </Box>
-      
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Published Date</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Published Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
             {filteredPosts.length > 0 ? (
               filteredPosts.map((post) => (
-                <TableRow key={post.id}>
-                  <TableCell>
-                    <Typography variant="body1" fontWeight="medium">
+                <tr key={post.id}>
+                  <td>
+                    <div className="font-medium">
                       {post.title}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    </div>
+                    <div className="text-sm text-gray-400">
                       {post.excerpt.length > 100
                         ? `${post.excerpt.substring(0, 100)}...`
                         : post.excerpt}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={post.category} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={post.status}
-                      color={post.status === 'published' ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{formatDate(post.publishedAt)}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      component={Link}
-                      to={`/blog-posts/view/${post.id}`}
-                      color="info"
-                      size="small"
-                    >
-                      <Visibility />
-                    </IconButton>
-                    <IconButton
-                      component={Link}
-                      to={`/blog-posts/edit/${post.id}`}
-                      color="primary"
-                      size="small"
-                    >
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteClick(post.id)}
-                      color="error"
-                      size="small"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="admin-badge admin-badge-info">
+                      {post.category}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`admin-badge ${post.status === 'published' ? 'admin-badge-success' : 'admin-badge-warning'}`}>
+                      {post.status}
+                    </span>
+                  </td>
+                  <td>{formatDate(post.publishedAt)}</td>
+                  <td>
+                    <div className="flex space-x-2">
+                      <Link
+                        to={`/blog-posts/view/${post.id}`}
+                        className="p-1.5 glass-button text-blue-400 hover:text-blue-300"
+                        title="View"
+                      >
+                        <Eye size={18} />
+                      </Link>
+                      <Link
+                        to={`/blog-posts/edit/${post.id}`}
+                        className="p-1.5 glass-button text-[#c9a52c] hover:text-[#d9b53c]"
+                        title="Edit"
+                      >
+                        <Edit size={18} />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(post.id)}
+                        className="p-1.5 glass-button text-red-400 hover:text-red-300"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
+              <tr>
+                <td colSpan={5} className="text-center py-8">
                   No blog posts found
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCancelDelete}
-      >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this blog post? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelDelete} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="glass-card p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
+            <p className="mb-6">
+              Are you sure you want to delete this blog post? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelDelete}
+                className="secondary-button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

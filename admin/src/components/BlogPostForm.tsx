@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Button, TextField, MenuItem, Select, FormControl, InputLabel, Chip, Box, Typography } from '@mui/material';
-import { Editor } from '@tinymce/tinymce-react';
 
 interface BlogPostFormProps {
   initialData?: any;
@@ -31,23 +29,23 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
       coverImage: ''
     }
   });
-  
+
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(initialData?.coverImage || null);
   const [tagInput, setTagInput] = useState('');
   const tags = watch('tags') || [];
-  
+
   useEffect(() => {
     if (initialData) {
       Object.keys(initialData).forEach(key => {
         setValue(key, initialData[key]);
       });
-      
+
       if (initialData.coverImage) {
         setCoverImagePreview(initialData.coverImage);
       }
     }
   }, [initialData, setValue]);
-  
+
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -60,194 +58,191 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
       reader.readAsDataURL(file);
     }
   };
-  
+
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setValue('tags', [...tags, tagInput.trim()]);
       setTagInput('');
     }
   };
-  
+
   const handleRemoveTag = (tagToRemove: string) => {
     setValue('tags', tags.filter((tag: string) => tag !== tagToRemove));
   };
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          label="Title"
-          fullWidth
-          {...register('title', { required: 'Title is required' })}
-          error={!!errors.title}
-          helperText={errors.title?.message as string}
-          sx={{ mb: 2 }}
-        />
-        
-        <TextField
-          label="Excerpt"
-          fullWidth
-          multiline
-          rows={3}
-          {...register('excerpt', { required: 'Excerpt is required' })}
-          error={!!errors.excerpt}
-          helperText={errors.excerpt?.message as string}
-          sx={{ mb: 2 }}
-        />
-        
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Category</InputLabel>
+      <div className="mb-6">
+        <div className="mb-4">
+          <label htmlFor="title" className="admin-label">Title</label>
+          <input
+            id="title"
+            type="text"
+            className={`admin-input ${errors.title ? 'border-red-500' : ''}`}
+            {...register('title', { required: 'Title is required' })}
+          />
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1">{errors.title.message as string}</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="excerpt" className="admin-label">Excerpt</label>
+          <textarea
+            id="excerpt"
+            rows={3}
+            className={`admin-textarea ${errors.excerpt ? 'border-red-500' : ''}`}
+            {...register('excerpt', { required: 'Excerpt is required' })}
+          ></textarea>
+          {errors.excerpt && (
+            <p className="text-red-500 text-sm mt-1">{errors.excerpt.message as string}</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="category" className="admin-label">Category</label>
           <Controller
             name="category"
             control={control}
             rules={{ required: 'Category is required' }}
             render={({ field }) => (
-              <Select
+              <select
+                id="category"
+                className={`admin-select ${errors.category ? 'border-red-500' : ''}`}
                 {...field}
-                label="Category"
-                error={!!errors.category}
               >
+                <option value="">Select a category</option>
                 {BLOG_CATEGORIES.map(category => (
-                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                  <option key={category} value={category}>{category}</option>
                 ))}
-              </Select>
+              </select>
             )}
           />
           {errors.category && (
-            <Typography color="error" variant="caption">
-              {errors.category.message as string}
-            </Typography>
+            <p className="text-red-500 text-sm mt-1">{errors.category.message as string}</p>
           )}
-        </FormControl>
-        
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Tags
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <TextField
-              label="Add tag"
+        </div>
+
+        <div className="mb-4">
+          <label className="admin-label">Tags</label>
+          <div className="flex items-center mb-2">
+            <input
+              type="text"
+              className="admin-input mr-2"
+              placeholder="Add a tag"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              sx={{ mr: 1 }}
             />
-            <Button variant="outlined" onClick={handleAddTag}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleAddTag}
+            >
               Add
-            </Button>
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag: string) => (
-              <Chip
+              <span
                 key={tag}
-                label={tag}
-                onDelete={() => handleRemoveTag(tag)}
-              />
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#3a2819] text-white"
+              >
+                {tag}
+                <button
+                  type="button"
+                  className="ml-1.5 text-white hover:text-red-300"
+                  onClick={() => handleRemoveTag(tag)}
+                >
+                  &times;
+                </button>
+              </span>
             ))}
-          </Box>
-        </Box>
-        
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Cover Image
-          </Typography>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="admin-label">Cover Image</label>
           <input
             type="file"
             accept="image/*"
             onChange={handleCoverImageChange}
-            style={{ marginBottom: '10px' }}
+            className="mb-2"
           />
           {coverImagePreview && (
-            <Box sx={{ mt: 1 }}>
+            <div className="mt-2">
               <img
                 src={coverImagePreview}
                 alt="Cover preview"
-                style={{ maxWidth: '100%', maxHeight: '200px' }}
+                className="max-w-full max-h-48 object-contain"
               />
-            </Box>
+            </div>
           )}
-        </Box>
-        
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Content
-          </Typography>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="content" className="admin-label">Content</label>
           <Controller
             name="content"
             control={control}
             rules={{ required: 'Content is required' }}
-            render={({ field: { onChange, value } }) => (
-              <Editor
-                apiKey="your-tinymce-api-key"
-                value={value}
-                onEditorChange={onChange}
-                init={{
-                  height: 500,
-                  menubar: true,
-                  plugins: [
-                    'advlist autolink lists link image charmap print preview anchor',
-                    'searchreplace visualblocks code fullscreen',
-                    'insertdatetime media table paste code help wordcount'
-                  ],
-                  toolbar:
-                    'undo redo | formatselect | bold italic backcolor | \
-                    alignleft aligncenter alignright alignjustify | \
-                    bullist numlist outdent indent | removeformat | help'
-                }}
-              />
+            render={({ field }) => (
+              <textarea
+                id="content"
+                className={`admin-textarea min-h-[300px] ${errors.content ? 'border-red-500' : ''}`}
+                {...field}
+              ></textarea>
             )}
           />
           {errors.content && (
-            <Typography color="error" variant="caption">
-              {errors.content.message as string}
-            </Typography>
+            <p className="text-red-500 text-sm mt-1">{errors.content.message as string}</p>
           )}
-        </Box>
-        
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Status</InputLabel>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="status" className="admin-label">Status</label>
           <Controller
             name="status"
             control={control}
             rules={{ required: 'Status is required' }}
             render={({ field }) => (
-              <Select
+              <select
+                id="status"
+                className="admin-select"
                 {...field}
-                label="Status"
-                error={!!errors.status}
               >
-                <MenuItem value="draft">Draft</MenuItem>
-                <MenuItem value="published">Published</MenuItem>
-              </Select>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
             )}
           />
-        </FormControl>
-      </Box>
-      
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={isLoading}
-        sx={{ mr: 1 }}
-      >
-        {isLoading ? 'Saving...' : initialData ? 'Update Post' : 'Create Post'}
-      </Button>
-      
-      <Button
-        variant="outlined"
-        color="secondary"
-        onClick={() => window.history.back()}
-      >
-        Cancel
-      </Button>
+        </div>
+      </div>
+
+      <div className="flex space-x-3">
+        <button
+          type="submit"
+          className="gold-button"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Saving...' : initialData ? 'Update Post' : 'Create Post'}
+        </button>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => window.history.back()}
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   );
 };

@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark-brown: #2d1e14;
+  --medium-brown: #4a2e1c;
+  --light-brown: #7a4528;
+  --gold: #c9a52c;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  @apply bg-[#2d1e14] text-white m-0 p-0;
+}
+
+.sidebar-item {
+  @apply flex items-center gap-3 py-3 px-4 text-white hover:bg-[#4a2e1c] rounded-md transition-all duration-300 hover:scale-105 hover:pl-5;
+}
+
+.sidebar-item.active {
+  @apply bg-[#4a2e1c];
+}
+
+.main-gradient {
+  background: linear-gradient(to bottom, #2d1e14 90%, #3a2819);
+}
+
+.gold-text {
+  @apply text-[#c9a52c];
+}
+
+.gold-button {
+  @apply bg-[#c9a52c] hover:bg-[#b89225] text-[#2d1e14] font-medium py-2 px-6 rounded-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(201,165,44,0.5)] hover:scale-105;
+}
+
+.secondary-button {
+  @apply bg-[#3a2819] hover:bg-[#4a2e1c] text-white font-medium py-2 px-6 rounded-md transition-all duration-300 border border-[#7a4528] hover:shadow-[0_0_15px_rgba(122,69,40,0.5)] hover:scale-105;
+}
+
+/* Glassmorphism effects */
+.glass-card {
+  @apply bg-[#2d1e14]/80 backdrop-blur-sm border border-[#7a4528]/30 rounded-xl shadow-lg;
+}
+
+.glass-navbar {
+  @apply bg-[#2d1e14]/90 backdrop-blur-md border-b border-[#7a4528]/30;
+}
+
+.glass-button {
+  @apply bg-[#2d1e14]/80 backdrop-blur-sm border border-[#7a4528]/50 rounded-md hover:bg-[#3a2819]/80 transition-all duration-300;
+}
+
+/* Admin specific styles */
+.admin-card {
+  @apply bg-[#3a2819] border border-[#7a4528]/30 rounded-lg p-4 shadow-md;
+}
+
+.admin-table {
+  @apply w-full border-collapse;
+}
+
+.admin-table th {
+  @apply text-left py-3 px-4 border-b border-[#7a4528]/50 text-[#c9a52c] font-medium;
+}
+
+.admin-table td {
+  @apply py-3 px-4 border-b border-[#7a4528]/30;
+}
+
+.admin-table tr:hover {
+  @apply bg-[#4a2e1c]/50;
+}
+
+.admin-input {
+  @apply w-full px-4 py-2 bg-[#2d1e14] border border-[#7a4528]/50 rounded-md focus:outline-none focus:border-[#c9a52c]/50 text-white;
+}
+
+.admin-label {
+  @apply block text-sm font-medium mb-1 text-gray-300;
+}
+
+.admin-select {
+  @apply w-full px-4 py-2 bg-[#2d1e14] border border-[#7a4528]/50 rounded-md focus:outline-none focus:border-[#c9a52c]/50 text-white;
+}
+
+.admin-textarea {
+  @apply w-full px-4 py-2 bg-[#2d1e14] border border-[#7a4528]/50 rounded-md focus:outline-none focus:border-[#c9a52c]/50 text-white min-h-[120px];
+}
+
+.admin-badge {
+  @apply inline-block px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.admin-badge-success {
+  @apply bg-green-900/30 text-green-300 border border-green-500/30;
+}
+
+.admin-badge-warning {
+  @apply bg-yellow-900/30 text-yellow-300 border border-yellow-500/30;
+}
+
+.admin-badge-error {
+  @apply bg-red-900/30 text-red-300 border border-red-500/30;
+}
+
+.admin-badge-info {
+  @apply bg-blue-900/30 text-blue-300 border border-blue-500/30;
+}
+
+.admin-badge-default {
+  @apply bg-gray-900/30 text-gray-300 border border-gray-500/30;
+}
