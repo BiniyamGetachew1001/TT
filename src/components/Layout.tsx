@@ -73,6 +73,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <House size={20} />
             <span>Home</span>
           </Link>
+          <Link to="/purchases" className={`sidebar-item ${isActive('/purchases') ? 'active' : ''}`}>
+            <ShoppingCart size={20} />
+            <span>My Purchases</span>
+          </Link>
           <Link to="/book-summaries" className={`sidebar-item ${isActive('/book-summaries') ? 'active' : ''}`}>
             <Book size={20} />
             <span>Book Summaries</span>
@@ -80,6 +84,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Link to="/business-plans" className={`sidebar-item ${isActive('/business-plans') ? 'active' : ''}`}>
             <LayoutGrid size={20} />
             <span>Business Plans</span>
+          </Link>
+          <Link to="/blog" className={`sidebar-item ${isActive('/blog') ? 'active' : ''}`}>
+            <FileText size={20} />
+            <span>Blog</span>
           </Link>
           <Link to="/bookmarks" className={`sidebar-item ${isActive('/bookmarks') ? 'active' : ''}`}>
             <Bookmark size={20} />
@@ -93,14 +101,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Link to="/offline-library" className={`sidebar-item ${isActive('/offline-library') ? 'active' : ''}`}>
             <Download size={20} />
             <span>Offline Library</span>
-          </Link>
-          <Link to="/blog" className={`sidebar-item ${isActive('/blog') ? 'active' : ''}`}>
-            <FileText size={20} />
-            <span>Blog</span>
-          </Link>
-          <Link to="/purchases" className={`sidebar-item ${isActive('/purchases') ? 'active' : ''}`}>
-            <ShoppingCart size={20} />
-            <span>My Purchases</span>
           </Link>
 
           <h2 className="text-xs uppercase text-gray-400 font-semibold mb-2 ml-2 mt-6">ACCOUNT</h2>
