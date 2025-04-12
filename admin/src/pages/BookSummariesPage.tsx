@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, DollarSign } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { Plus, Search, Edit, Trash2, Eye, DollarSign, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import type { BookSummary } from '../lib/supabase';
 
 // Mock data for book summaries
 const mockBookSummaries = [
@@ -68,51 +69,74 @@ const mockBookSummaries = [
 ];
 
 const BookSummariesPage: React.FC = () => {
-  const { supabase } = useAuth();
-  const [bookSummaries, setBookSummaries] = useState(mockBookSummaries);
+  const [bookSummaries, setBookSummaries] = useState<BookSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
-  
+
   useEffect(() => {
-    // In a real implementation, you would fetch actual data from the API
-    // For now, we'll use the mock data
     const fetchBookSummaries = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setBookSummaries(mockBookSummaries);
-      } catch (error) {
-        console.error('Error fetching book summaries:', error);
+        setIsLoading(true);
+        setError(null);
+
+        const { data, error } = await supabase
+          .from('book_summaries')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setBookSummaries(data || []);
+      } catch (err: any) {
+        console.error('Error fetching book summaries:', err);
+        // Check if the error is because the table doesn't exist
+        if (err.code === '42P01') {
+          setError('The book_summaries table does not exist. Please run the SQL scripts to create it.');
+        } else {
+          setError(err.message || 'Failed to load book summaries');
+        }
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchBookSummaries();
-  }, [supabase]);
-  
+  }, []);
+
   const handleDeleteClick = (id: string) => {
     setBookToDelete(id);
     setDeleteModalOpen(true);
   };
-  
+
   const handleConfirmDelete = async () => {
     if (!bookToDelete) return;
-    
+
     try {
-      // In a real implementation, you would call the API to delete the book
-      // For now, we'll just update the local state
+      setIsLoading(true);
+
+      const { error } = await supabase
+        .from('book_summaries')
+        .delete()
+        .eq('id', bookToDelete);
+
+      if (error) throw error;
+
+      // Update local state
       setBookSummaries(prevBooks => prevBooks.filter(book => book.id !== bookToDelete));
       setDeleteModalOpen(false);
       setBookToDelete(null);
-    } catch (error) {
-      console.error('Error deleting book summary:', error);
+    } catch (err: any) {
+      console.error('Error deleting book summary:', err);
+      alert('Failed to delete book summary: ' + err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
   // Filter book summaries based on search term and category
   const filteredBooks = bookSummaries.filter(book => {
     const matchesSearch = searchTerm
@@ -120,17 +144,17 @@ const BookSummariesPage: React.FC = () => {
         book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.description.toLowerCase().includes(searchTerm.toLowerCase())
       : true;
-    
+
     const matchesCategory = filterCategory
       ? book.category === filterCategory
       : true;
-    
+
     return matchesSearch && matchesCategory;
   });
-  
+
   // Get unique categories for filter dropdown
   const categories = [...new Set(bookSummaries.map(book => book.category))];
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -138,7 +162,7 @@ const BookSummariesPage: React.FC = () => {
       day: 'numeric'
     });
   };
-  
+
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center mb-6">
@@ -151,7 +175,7 @@ const BookSummariesPage: React.FC = () => {
           Add New Book
         </Link>
       </div>
-      
+
       {/* Filters */}
       <div className="admin-card mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,7 +191,7 @@ const BookSummariesPage: React.FC = () => {
               className="admin-input pl-10"
             />
           </div>
-          
+
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -180,7 +204,20 @@ const BookSummariesPage: React.FC = () => {
           </select>
         </div>
       </div>
-      
+
+      {/* Error Message */}
+      {error && (
+        <div className="admin-card mb-6 bg-red-900/30 border border-red-500/50">
+          <div className="flex items-center">
+            <AlertCircle className="text-red-400 mr-3" size={24} />
+            <div>
+              <h3 className="font-medium text-red-400">Error loading book summaries</h3>
+              <p className="text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Book Summaries List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
@@ -205,13 +242,16 @@ const BookSummariesPage: React.FC = () => {
                   <tr key={book.id}>
                     <td className="flex items-center">
                       <img
-                        src={book.coverImage}
+                        src={book.cover_image || '/placeholder-book.jpg'}
                         alt={book.title}
                         className="w-12 h-16 object-cover rounded mr-3"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-book.jpg';
+                        }}
                       />
                       <div>
                         <div className="font-medium">{book.title}</div>
-                        <div className="text-sm text-gray-400">{book.readTime}</div>
+                        <div className="text-sm text-gray-400">{book.read_time}</div>
                       </div>
                     </td>
                     <td>{book.author}</td>
@@ -221,7 +261,7 @@ const BookSummariesPage: React.FC = () => {
                       </span>
                     </td>
                     <td>${book.price.toFixed(2)}</td>
-                    <td>{formatDate(book.updatedAt)}</td>
+                    <td>{formatDate(book.updated_at)}</td>
                     <td>
                       <div className="flex space-x-2">
                         <Link
@@ -267,7 +307,7 @@ const BookSummariesPage: React.FC = () => {
           </table>
         </div>
       )}
-      
+
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

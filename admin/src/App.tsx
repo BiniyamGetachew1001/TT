@@ -112,11 +112,31 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/book-summaries/:id"
+        path="/book-summaries/edit/:id"
         element={
           <ProtectedRoute>
             <AdminLayout>
-              <BookSummariesPage />
+              <BookSummaryEditPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/book-summaries/view/:id"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BookSummaryEditPage readOnly={true} />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/book-summaries/new"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BookSummaryEditPage />
             </AdminLayout>
           </ProtectedRoute>
         }
