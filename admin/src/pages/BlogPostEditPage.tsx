@@ -1,84 +1,129 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BlogPostForm from '../components/BlogPostForm';
+import { supabase } from '../lib/supabase';
+import type { BlogPost } from '../lib/supabase';
 
-// Mock data for a single blog post
-const mockBlogPost = {
-  id: '1',
-  title: 'How to Start a Successful Business in 2023',
-  excerpt: 'Learn the essential steps to launch a thriving business in today\'s competitive market.',
-  content: '<h2>Introduction</h2><p>Starting a business can be both exciting and challenging. This guide will walk you through the essential steps to launch a successful business in 2023.</p><h2>Market Research</h2><p>Before diving in, it\'s crucial to understand your target market. Conduct thorough research to identify customer needs and pain points.</p><h2>Business Plan</h2><p>A solid business plan serves as your roadmap. It should outline your business goals, strategies, and financial projections.</p><h2>Funding</h2><p>Explore various funding options such as bootstrapping, loans, investors, or crowdfunding to get your business off the ground.</p><h2>Legal Structure</h2><p>Choose the right legal structure for your business (sole proprietorship, LLC, corporation) based on your needs and goals.</p><h2>Conclusion</h2><p>Starting a business requires careful planning and execution. By following these steps, you\'ll be well on your way to building a successful venture in 2023.</p>',
-  coverImage: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&h=675',
-  category: 'Entrepreneurship',
-  tags: ['business', 'startup', 'entrepreneurship'],
-  status: 'published',
-  publishedAt: '2023-07-10T12:00:00Z',
-  authorId: 'user1'
-};
+interface BlogPostEditPageProps {
+  readOnly?: boolean;
+}
 
-const BlogPostEditPage: React.FC = () => {
+const BlogPostEditPage: React.FC<BlogPostEditPageProps> = ({ readOnly = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { supabase } = useAuth();
-  const [blogPost, setBlogPost] = useState<any | null>(null);
+  const { user } = useAuth();
+  const [blogPost, setBlogPost] = useState<Partial<BlogPost> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const isNewPost = id === 'new';
-  
+
   useEffect(() => {
-    // In a real implementation, you would fetch actual data from the API
-    // For now, we'll use the mock data
     const fetchBlogPost = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
+
         if (isNewPost) {
           setBlogPost({
             title: '',
             excerpt: '',
             content: '',
-            coverImage: '',
+            cover_image: '',
             category: '',
             tags: [],
             status: 'draft',
-            authorId: 'user1' // In a real app, this would be the current user's ID
+            author_id: '00000000-0000-0000-0000-000000000000' // Use the admin user ID
           });
-        } else {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setBlogPost(mockBlogPost);
+        } else if (id) {
+          // Temporarily use a simpler query until the schema is set up
+          const { data, error } = await supabase
+            .from('blog_posts')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (error) throw error;
+
+          if (!data) {
+            throw new Error('Blog post not found');
+          }
+
+          // Transform the data to match the form fields
+          setBlogPost({
+            ...data,
+            coverImage: data.cover_image,
+            publishedAt: data.published_at,
+            authorId: data.author_id
+          });
         }
-      } catch (error) {
-        console.error('Error fetching blog post:', error);
-        setError('Failed to load blog post');
+      } catch (err: any) {
+        console.error('Error fetching blog post:', err);
+        setError(err.message || 'Failed to load blog post');
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchBlogPost();
-  }, [id, isNewPost, supabase]);
-  
+  }, [id, isNewPost, user]);
+
   const handleSubmit = async (formData: any) => {
     setIsSaving(true);
     setError(null);
-    
+
     try {
-      // In a real implementation, you would call the API to save the post
-      // For now, we'll just simulate a successful save
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      console.log('Form data received:', formData);
+      console.log('Cover image URL:', formData.coverImage);
+
+      // Transform the form data to match the database schema
+      const postData = {
+        title: formData.title,
+        excerpt: formData.excerpt,
+        content: formData.content,
+        category: formData.category,
+        tags: formData.tags,
+        status: formData.status,
+        cover_image: formData.coverImage,
+        // Use the admin user ID
+        author_id: '00000000-0000-0000-0000-000000000000',
+        published_at: formData.status === 'published' ? new Date().toISOString() : null
+      };
+
+      console.log('Post data to save:', postData);
+
+      if (isNewPost) {
+        // Create a new blog post
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .insert([postData])
+          .select()
+          .single();
+
+        if (error) throw error;
+      } else if (id) {
+        // Update an existing blog post
+        const { error } = await supabase
+          .from('blog_posts')
+          .update(postData)
+          .eq('id', id);
+
+        if (error) throw error;
+      }
+
       // Navigate back to the blog posts list
       navigate('/blog-posts');
     } catch (err: any) {
+      console.error('Error saving blog post:', err);
       setError(err.message || 'Failed to save blog post');
     } finally {
       setIsSaving(false);
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -86,7 +131,7 @@ const BlogPostEditPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="admin-card p-6 text-center">
@@ -100,7 +145,7 @@ const BlogPostEditPage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div>
       <div className="flex items-center mb-6">
@@ -112,25 +157,27 @@ const BlogPostEditPage: React.FC = () => {
         </button>
         <div>
           <h1 className="text-3xl font-bold gold-text">
-            {isNewPost ? 'Create New Blog Post' : 'Edit Blog Post'}
+            {isNewPost ? 'Create New Blog Post' : readOnly ? 'View Blog Post' : 'Edit Blog Post'}
           </h1>
           <p className="text-gray-400">
-            {isNewPost ? 'Add a new blog post to your site' : 'Update your blog post content'}
+            {isNewPost ? 'Add a new blog post to your site' : readOnly ? 'View the details of this blog post' : 'Update your blog post content'}
           </p>
         </div>
       </div>
-      
+
       {error && (
-        <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-6">
-          {error}
+        <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-6 flex items-center">
+          <AlertCircle className="text-red-400 mr-3" size={20} />
+          <span>{error}</span>
         </div>
       )}
-      
+
       <div className="admin-card">
         <BlogPostForm
           initialData={blogPost}
           onSubmit={handleSubmit}
           isLoading={isSaving}
+          readOnly={readOnly}
         />
       </div>
     </div>

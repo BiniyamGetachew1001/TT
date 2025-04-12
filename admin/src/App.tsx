@@ -15,7 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 // Protected route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -23,11 +23,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       </div>
     );
   }
-  
+
   if (!isAuthenticated || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -35,7 +35,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      
+
       <Route
         path="/"
         element={
@@ -46,7 +46,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/dashboard"
         element={
@@ -57,7 +57,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Blog Posts Routes */}
       <Route
         path="/blog-posts"
@@ -70,7 +70,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/blog-posts/:id"
+        path="/blog-posts/edit/:id"
         element={
           <ProtectedRoute>
             <AdminLayout>
@@ -79,7 +79,27 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+      <Route
+        path="/blog-posts/view/:id"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BlogPostEditPage readOnly={true} />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/blog-posts/new"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BlogPostEditPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Book Summaries Routes */}
       <Route
         path="/book-summaries"
@@ -101,7 +121,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Business Plans Routes */}
       <Route
         path="/business-plans"
@@ -123,7 +143,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Users Route */}
       <Route
         path="/users"
@@ -135,7 +155,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Purchases Route */}
       <Route
         path="/purchases"
@@ -147,7 +167,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Settings Route */}
       <Route
         path="/settings"
@@ -159,7 +179,7 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Catch-all route */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

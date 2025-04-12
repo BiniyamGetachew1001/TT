@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllBlogPosts, getMockBlogPosts } from '../services/blogService';
+import { getAllBlogPosts } from '../services/blogService';
 import BlogPostCard from '../components/BlogPostCard';
 
 const BLOG_CATEGORIES = [
@@ -23,10 +23,8 @@ const BlogPage: React.FC = () => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        // For development, use mock data
-        const response = getMockBlogPosts();
-        // In production, use this:
-        // const response = await getAllBlogPosts(filterCategory);
+        // Use real data from Supabase
+        const response = await getAllBlogPosts(filterCategory);
         if (response.success) {
           setPosts(response.data);
         } else {

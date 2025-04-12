@@ -1,111 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BlogPostList from '../components/BlogPostList';
-
-// Mock data for blog posts
-const mockBlogPosts = [
-  {
-    id: '1',
-    title: 'How to Start a Successful Business in 2023',
-    excerpt: 'Learn the essential steps to launch a thriving business in today\'s competitive market.',
-    category: 'Entrepreneurship',
-    status: 'published',
-    publishedAt: '2023-07-10T12:00:00Z',
-    author: { name: 'John Doe', id: 'user1' }
-  },
-  {
-    id: '2',
-    title: 'The Power of Compound Interest: Building Wealth Over Time',
-    excerpt: 'Discover how compound interest can transform your financial future with consistent investments.',
-    category: 'Finance',
-    status: 'published',
-    publishedAt: '2023-07-05T10:30:00Z',
-    author: { name: 'Jane Smith', id: 'user2' }
-  },
-  {
-    id: '3',
-    title: '10 Essential Marketing Strategies for Small Businesses',
-    excerpt: 'Effective marketing tactics that don\'t require a massive budget but deliver real results.',
-    category: 'Marketing',
-    status: 'draft',
-    publishedAt: null,
-    author: { name: 'Bob Johnson', id: 'user3' }
-  },
-  {
-    id: '4',
-    title: 'How to Build a Strong Company Culture',
-    excerpt: 'Learn how to create a positive work environment that attracts and retains top talent.',
-    category: 'Business',
-    status: 'published',
-    publishedAt: '2023-06-28T14:15:00Z',
-    author: { name: 'Alice Brown', id: 'user4' }
-  },
-  {
-    id: '5',
-    title: 'The Future of E-commerce: Trends to Watch',
-    excerpt: 'Stay ahead of the curve with these emerging e-commerce trends that are shaping the industry.',
-    category: 'Technology',
-    status: 'draft',
-    publishedAt: null,
-    author: { name: 'John Doe', id: 'user1' }
-  }
-];
+import { supabase } from '../lib/supabase';
+import type { BlogPost } from '../lib/supabase';
 
 const BlogPostsPage: React.FC = () => {
-  const { supabase } = useAuth();
-  const [blogPosts, setBlogPosts] = useState(mockBlogPosts);
+  const { user } = useAuth();
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  
+
   useEffect(() => {
-    // In a real implementation, you would fetch actual data from the API
-    // For now, we'll use the mock data
     const fetchBlogPosts = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setBlogPosts(mockBlogPosts);
-      } catch (error) {
-        console.error('Error fetching blog posts:', error);
+        setIsLoading(true);
+        setError(null);
+
+        // Temporarily use a simpler query until the schema is set up
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setBlogPosts(data || []);
+      } catch (err: any) {
+        console.error('Error fetching blog posts:', err);
+        // Check if the error is because the table doesn't exist
+        if (err.code === '42P01') {
+          setError('The blog_posts table does not exist. Please run the SQL scripts to create it.');
+        } else {
+          setError(err.message || 'Failed to load blog posts');
+        }
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchBlogPosts();
-  }, [supabase]);
-  
+  }, []);
+
   const handleDeletePost = async (id: string) => {
-    // In a real implementation, you would call the API to delete the post
-    // For now, we'll just update the local state
-    setBlogPosts(prevPosts => prevPosts.filter(post => post.id !== id));
+    try {
+      setIsLoading(true);
+
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state
+      setBlogPosts(prevPosts => prevPosts.filter(post => post.id !== id));
+    } catch (err: any) {
+      console.error('Error deleting blog post:', err);
+      alert('Failed to delete blog post: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
+
   // Filter posts based on search term, category, and status
   const filteredPosts = blogPosts.filter(post => {
     const matchesSearch = searchTerm
       ? post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
       : true;
-    
+
     const matchesCategory = filterCategory
       ? post.category === filterCategory
       : true;
-    
+
     const matchesStatus = filterStatus
       ? post.status === filterStatus
       : true;
-    
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
-  
+
   // Get unique categories for filter dropdown
-  const categories = [...new Set(blogPosts.map(post => post.category))];
-  
+  const categories = [...new Set(blogPosts.map(post => post.category).filter(Boolean))];
+
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center mb-6">
@@ -118,7 +100,7 @@ const BlogPostsPage: React.FC = () => {
           Add New Post
         </Link>
       </div>
-      
+
       {/* Filters */}
       <div className="admin-card mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -134,7 +116,7 @@ const BlogPostsPage: React.FC = () => {
               className="admin-input pl-10"
             />
           </div>
-          
+
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -145,7 +127,7 @@ const BlogPostsPage: React.FC = () => {
               <option key={category} value={category}>{category}</option>
             ))}
           </select>
-          
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -157,7 +139,20 @@ const BlogPostsPage: React.FC = () => {
           </select>
         </div>
       </div>
-      
+
+      {/* Error Message */}
+      {error && (
+        <div className="admin-card mb-6 bg-red-900/30 border border-red-500/50">
+          <div className="flex items-center">
+            <AlertCircle className="text-red-400 mr-3" size={24} />
+            <div>
+              <h3 className="font-medium text-red-400">Error loading blog posts</h3>
+              <p className="text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Blog Post List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">

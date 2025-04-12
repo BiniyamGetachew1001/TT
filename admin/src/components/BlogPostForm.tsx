@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { X } from 'lucide-react';
 
 interface BlogPostFormProps {
   initialData?: any;
   onSubmit: (data: any) => void;
   isLoading: boolean;
+  readOnly?: boolean;
 }
 
 const BLOG_CATEGORIES = [
@@ -17,7 +19,7 @@ const BLOG_CATEGORIES = [
   'Other'
 ];
 
-const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLoading }) => {
+const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLoading, readOnly = false }) => {
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm({
     defaultValues: initialData || {
       title: '',
@@ -46,17 +48,11 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
     }
   }, [initialData, setValue]);
 
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setCoverImagePreview(base64String);
-        setValue('coverImage', base64String);
-      };
-      reader.readAsDataURL(file);
-    }
+  // Function to validate image URL
+  const validateImageUrl = (url: string) => {
+    // Basic URL validation
+    const urlPattern = /^(https?:\/\/)?([\w\-])+\.([\w\-\.]+)([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?$/;
+    return urlPattern.test(url);
   };
 
   const handleAddTag = () => {
@@ -78,7 +74,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className={readOnly ? 'pointer-events-none opacity-90' : ''}>
       <div className="mb-6">
         <div className="mb-4">
           <label htmlFor="title" className="admin-label">Title</label>
@@ -169,20 +165,56 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
         </div>
 
         <div className="mb-4">
-          <label className="admin-label">Cover Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleCoverImageChange}
-            className="mb-2"
-          />
-          {coverImagePreview && (
-            <div className="mt-2">
+          <label className="admin-label">Cover Image URL</label>
+          <div className="flex">
+            <input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={coverImagePreview || ''}
+              onChange={(e) => {
+                const url = e.target.value;
+                setCoverImagePreview(url);
+                setValue('coverImage', url);
+
+                // Validate URL format
+                if (url && !validateImageUrl(url)) {
+                  console.warn('Invalid image URL format:', url);
+                }
+              }}
+              className="admin-input flex-1"
+            />
+            {coverImagePreview && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverImagePreview('');
+                  setValue('coverImage', '');
+                }}
+                className="ml-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-md px-3"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Enter the URL of an image hosted elsewhere (e.g., Imgur, Cloudinary, etc.)</p>
+
+          {/* Image Preview */}
+          {coverImagePreview ? (
+            <div className="mt-4 max-w-md rounded-md overflow-hidden border border-gray-700">
               <img
                 src={coverImagePreview}
                 alt="Cover preview"
-                className="max-w-full max-h-48 object-contain"
+                className="w-full h-auto max-h-[200px] object-cover"
+                onError={(e) => {
+                  console.error('Error loading preview image:', coverImagePreview);
+                  e.currentTarget.src = '/placeholder-blog.jpg';
+                }}
               />
+              <p className="text-xs text-gray-500 p-2 bg-gray-800">Image Preview</p>
+            </div>
+          ) : (
+            <div className="mt-4 max-w-md h-[150px] rounded-md border border-gray-700 flex items-center justify-center bg-gray-800">
+              <p className="text-gray-500">No image preview available</p>
             </div>
           )}
         </div>
@@ -226,23 +258,37 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onSubmit, isLo
         </div>
       </div>
 
-      <div className="flex space-x-3">
-        <button
-          type="submit"
-          className="gold-button"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : initialData ? 'Update Post' : 'Create Post'}
-        </button>
+      {!readOnly && (
+        <div className="flex space-x-3">
+          <button
+            type="submit"
+            className="gold-button"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : initialData ? 'Update Post' : 'Create Post'}
+          </button>
 
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => window.history.back()}
-        >
-          Cancel
-        </button>
-      </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => window.history.back()}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {readOnly && (
+        <div className="flex space-x-3">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => window.history.back()}
+          >
+            Back to Blog Posts
+          </button>
+        </div>
+      )}
     </form>
   );
 };

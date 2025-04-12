@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2, Eye } from 'lucide-react';
 
+import type { BlogPost } from '../lib/supabase';
+
 interface BlogPostListProps {
-  posts: any[];
+  posts: (BlogPost & { author?: { name: string, email: string } })[];
   onDelete: (id: string) => void;
 }
 
@@ -32,7 +34,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
     setPostToDelete(null);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not published';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -121,7 +123,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
                       {post.title}
                     </div>
                     <div className="text-sm text-gray-400">
-                      {post.excerpt.length > 100
+                      {post.excerpt && post.excerpt.length > 100
                         ? `${post.excerpt.substring(0, 100)}...`
                         : post.excerpt}
                     </div>
@@ -136,7 +138,7 @@ const BlogPostList: React.FC<BlogPostListProps> = ({ posts, onDelete }) => {
                       {post.status}
                     </span>
                   </td>
-                  <td>{formatDate(post.publishedAt)}</td>
+                  <td>{formatDate(post.published_at)}</td>
                   <td>
                     <div className="flex space-x-2">
                       <Link

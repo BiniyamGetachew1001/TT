@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getBlogPostById, getMockBlogPostById } from '../services/blogService';
+import { getBlogPostById } from '../services/blogService';
 import BlogPostDetail from '../components/BlogPostDetail';
 
 const BlogPostDetailPage: React.FC = () => {
@@ -15,10 +15,8 @@ const BlogPostDetailPage: React.FC = () => {
 
       setLoading(true);
       try {
-        // For development, use mock data
-        const response = getMockBlogPostById(id);
-        // In production, use this:
-        // const response = await getBlogPostById(id);
+        // Use real data from Supabase
+        const response = await getBlogPostById(id);
         if (response.success) {
           setPost(response.data);
         } else {
