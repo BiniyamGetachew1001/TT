@@ -85,8 +85,7 @@ const BusinessPlansPage: React.FC = () => {
                   type: 'business-plan',
                   title: plan.title,
                   author: plan.author,
-                  coverImage: plan.coverImage,
-                  timestamp: new Date().toISOString()
+                  coverImage: plan.coverImage
                 })}
                 className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
               >

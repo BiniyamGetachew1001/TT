@@ -13,18 +13,22 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Test route outside of Layout */}
-        <Route path="/test" element={<SupabaseTest />} />
+        {/* Test route completely separate */}
+        <Route path="/test" element={
+          <div className="min-h-screen">
+            <SupabaseTest />
+          </div>
+        } />
         
-        {/* Main app routes with Layout */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/book-summaries" element={<BookSummariesPage />} />
-          <Route path="/book-summaries/:id" element={<BookDetailPage />} />
-          <Route path="/reading/:id" element={<ReadingPage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/business-plans" element={<BusinessPlansPage />} />
-          <Route path="/business-plans/:id" element={<BusinessPlanDetailPage />} />
+        {/* All other routes with Layout */}
+        <Route path="/*" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="book-summaries" element={<BookSummariesPage />} />
+          <Route path="book-summaries/:id" element={<BookDetailPage />} />
+          <Route path="reading/:id" element={<ReadingPage />} />
+          <Route path="bookmarks" element={<BookmarksPage />} />
+          <Route path="business-plans" element={<BusinessPlansPage />} />
+          <Route path="business-plans/:id" element={<BusinessPlanDetailPage />} />
         </Route>
       </Routes>
     </Router>
