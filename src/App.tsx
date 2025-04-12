@@ -11,15 +11,22 @@ import SettingsPage from './pages/SettingsPage';
 import ReadingPage from './pages/ReadingPage';
 import AccountPage from './pages/AccountPage';
 import OfflineLibraryPage from './pages/OfflineLibraryPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostDetailPage from './pages/BlogPostDetailPage';
+import PurchasesPage from './pages/PurchasesPage';
+import BookPurchasePage from './pages/BookPurchasePage';
+import LoginPage from './pages/LoginPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
+import { AuthProvider } from './contexts/AuthContext';
 import './index.css';
 
 const App = () => {
   return (
     <Router>
-      <BookmarkProvider>
-        <Layout>
-          <Routes>
+      <AuthProvider>
+        <BookmarkProvider>
+          <Layout>
+            <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/features" element={<FeaturesPage />} />
@@ -31,9 +38,15 @@ const App = () => {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/offline-library" element={<OfflineLibraryPage />} />
-          </Routes>
-        </Layout>
-      </BookmarkProvider>
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:id" element={<BlogPostDetailPage />} />
+            <Route path="/purchases" element={<PurchasesPage />} />
+            <Route path="/books/:id/purchase" element={<BookPurchasePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            </Routes>
+          </Layout>
+        </BookmarkProvider>
+      </AuthProvider>
     </Router>
   );
 };

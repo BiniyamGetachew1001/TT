@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useBookmarks } from '../contexts/BookmarkContext';
 
@@ -78,6 +78,11 @@ const BusinessPlanDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const plan = mockBusinessPlan; // In a real app, fetch based on id
+
+  useEffect(() => {
+    // In a real app, we would fetch business plan details here
+    console.log('Fetching business plan details for ID:', id);
+  }, [id]);
 
   return (
     <div className="container mx-auto px-4 py-8">

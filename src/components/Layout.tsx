@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, Menu, Moon, Settings, User, X } from 'lucide-react';
+import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, Menu, Moon, Settings, User, X, FileText, ShoppingCart } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import Footer from './Footer';
@@ -14,14 +14,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { bookmarks } = useBookmarks();
   const bookmarkCount = bookmarks.length;
-  
+
   useEffect(() => {
     // Include required font
     const link = document.createElement('link');
     link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-    
+
     return () => {
       document.head.removeChild(link);
     };
@@ -33,11 +33,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       setIsSidebarOpen(false);
     }
   }, [location.pathname]);
-  
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
-  
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -45,15 +45,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen">
       {/* Menu button - now visible on all screen sizes */}
-      <button 
+      <button
         className="fixed top-4 left-4 z-50 text-white glass-button p-1 rounded-md"
         onClick={toggleSidebar}
       >
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
-      
+
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } fixed md:absolute w-64 h-full glass-navbar border-r border-[#4a2e1c] flex flex-col z-40 transition-all duration-300 ease-in-out`}
@@ -62,16 +62,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Book className="text-[#c9a52c]" size={24} />
           <h1 className="text-xl font-bold text-white">TilkTibeb</h1>
         </div>
-        
+
         <div className="p-3">
           <SearchBar />
         </div>
-        
+
         <nav className="flex-grow p-3">
           <h2 className="text-xs uppercase text-gray-400 font-semibold mb-2 ml-2">MAIN</h2>
           <Link to="/" className={`sidebar-item ${isActive('/') ? 'active' : ''}`}>
             <House size={20} />
             <span>Home</span>
+          </Link>
+          <Link to="/purchases" className={`sidebar-item ${isActive('/purchases') ? 'active' : ''}`}>
+            <ShoppingCart size={20} />
+            <span>My Purchases</span>
           </Link>
           <Link to="/book-summaries" className={`sidebar-item ${isActive('/book-summaries') ? 'active' : ''}`}>
             <Book size={20} />
@@ -80,6 +84,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Link to="/business-plans" className={`sidebar-item ${isActive('/business-plans') ? 'active' : ''}`}>
             <LayoutGrid size={20} />
             <span>Business Plans</span>
+          </Link>
+          <Link to="/blog" className={`sidebar-item ${isActive('/blog') ? 'active' : ''}`}>
+            <FileText size={20} />
+            <span>Blog</span>
           </Link>
           <Link to="/bookmarks" className={`sidebar-item ${isActive('/bookmarks') ? 'active' : ''}`}>
             <Bookmark size={20} />
@@ -94,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Download size={20} />
             <span>Offline Library</span>
           </Link>
-          
+
           <h2 className="text-xs uppercase text-gray-400 font-semibold mb-2 ml-2 mt-6">ACCOUNT</h2>
           <Link to="/account" className={`sidebar-item ${isActive('/account') ? 'active' : ''}`}>
             <User size={20} />
@@ -109,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span>Settings</span>
           </Link>
         </nav>
-        
+
         <div className="p-3 mt-auto">
           <Link to="#" className="sidebar-item">
             <Moon size={20} />
@@ -117,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
         </div>
       </aside>
-      
+
       {/* Main content */}
       <div className={`flex-grow h-screen overflow-y-auto main-gradient transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
         <div className="flex flex-col min-h-full">

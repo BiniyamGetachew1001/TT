@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
 interface BookDetail {
@@ -58,6 +58,12 @@ Key themes include the importance of humility in financial decisions, the role o
 
 const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  
+  useEffect(() => {
+    // In a real app, we would fetch book details here
+    console.log('Fetching book details for ID:', id);
+  }, [id]);
+
   const book = mockBookDetail; // In a real app, we would fetch this based on the ID
 
   return (

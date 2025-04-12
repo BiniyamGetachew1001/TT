@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bookmarks Bookmark[]
+  blogPosts BlogPost[]
+  purchases Purchase[]
+}
+
+model BookSummary {
+  id          String     @id @default(uuid())
+  title       String
+  author      String
+  description String
+  coverImage  String
+  readTime    String
+  category    String
+  summary     String
+  keyPoints   String[]
+  price       Float      @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bookmarks   Bookmark[]
+  purchases   Purchase[]
+}
+
+model BusinessPlan {
+  id          String     @id @default(uuid())
+  title       String
+  industry    String
+  description String
+  coverImage  String
+  author      String
+  readTime    String
+  price       Float
+  sections    Json
+  keyFeatures String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bookmarks   Bookmark[]
+  purchases   Purchase[]
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // 'book-summary', 'business-plan', or 'blog-post'
+  itemId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  book      BookSummary? @relation(fields: [itemId], references: [id], map: "Bookmark_bookId_fkey")
+  plan      BusinessPlan? @relation(fields: [itemId], references: [id], map: "Bookmark_planId_fkey")
+  blogPost  BlogPost? @relation(fields: [itemId], references: [id], map: "Bookmark_blogPostId_fkey")
+
+  @@unique([userId, type, itemId])
+}
+
+model BlogPost {
+  id          String     @id @default(uuid())
+  title       String
+  content     String
+  excerpt     String
+  coverImage  String?
+  authorId    String
+  category    String
+  tags        String[]
+  status      String     @default("draft") // draft, published
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  author      User       @relation(fields: [authorId], references: [id])
+  bookmarks   Bookmark[]
+}
+
+model Purchase {
+  id          String       @id @default(uuid())
+  userId      String
+  itemType    String       // 'book-summary' or 'business-plan'
+  itemId      String
+  amount      Float
+  currency    String       @default("USD")
+  status      String       // 'pending', 'completed', 'failed'
+  paymentId   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id])
+  book        BookSummary? @relation(fields: [itemId], references: [id], map: "Purchase_bookId_fkey")
+  plan        BusinessPlan? @relation(fields: [itemId], references: [id], map: "Purchase_planId_fkey")
+
+  @@unique([userId, itemType, itemId])
+}

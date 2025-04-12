@@ -7,22 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+        'primary': {
+          DEFAULT: '#B8860B', // Golden color for primary elements
+          '600': '#9A7209',
         },
+        'background': {
+          'dark': '#1C1614', // Dark brown background
+          'card': 'rgba(44, 31, 27, 0.95)', // Card background with opacity
+        },
+        'surface': {
+          'light': 'rgba(255, 255, 255, 0.1)', // Light surface for cards
+          'dark': 'rgba(0, 0, 0, 0.2)', // Dark surface for cards
+        }
       },
       fontFamily: {
         sans: ['Inter var', 'sans-serif'],
       },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(circle at top left, rgba(184, 134, 11, 0.1) 0%, transparent 60%)',
+      }
     },
   },
   plugins: [],
