@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, Menu, Moon, Settings, User, X, FileText, ShoppingCart } from 'lucide-react';
+import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, Menu, Moon, Settings, User, X, FileText, ShoppingCart, Shield } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
+import { useAuth } from '../contexts/AuthContext';
 import Footer from './Footer';
 
 interface LayoutProps {
@@ -13,6 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const { bookmarks } = useBookmarks();
+  const { user } = useAuth();
   const bookmarkCount = bookmarks.length;
 
   useEffect(() => {
@@ -116,6 +118,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Settings size={20} />
             <span>Settings</span>
           </Link>
+          {user?.email === 'biniyam.getachew@aastustudent.edu.et' && (
+            <Link to="/admin" className={`sidebar-item ${isActive('/admin') ? 'active' : ''}`}>
+              <Shield size={20} />
+              <span>Admin Panel</span>
+            </Link>
+          )}
         </nav>
 
         <div className="p-3 mt-auto">

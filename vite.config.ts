@@ -156,5 +156,11 @@ export default defineConfig({
   ],
   server: {
     allowedHosts: true,
+    proxy: {
+      '/admin-panel': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
   },
 });
