@@ -479,37 +479,259 @@ const BusinessPlansSection: React.FC = () => {
   );
 };
 
-// Simple Settings Section
+// Settings Section with Form Validation
 const SettingsSection: React.FC = () => {
+  // Form state
+  const [formData, setFormData] = useState({
+    siteName: "TilkTibeb",
+    siteDescription: "Premium business book summaries and business plans",
+    contactEmail: "contact@tilktibeb.com",
+    socialLinks: {
+      facebook: "https://facebook.com/tilktibeb",
+      twitter: "https://twitter.com/tilktibeb",
+      instagram: ""
+    }
+  });
+
+  // Validation state
+  const [errors, setErrors] = useState<{
+    siteName?: string;
+    siteDescription?: string;
+    contactEmail?: string;
+    socialLinks?: {
+      facebook?: string;
+      twitter?: string;
+      instagram?: string;
+    };
+  }>({});
+
+  // Success message state
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+
+    // Clear error when user types
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle social link changes
+  const handleSocialLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear error when user types
+    if (errors.socialLinks && errors.socialLinks[name as keyof typeof errors.socialLinks]) {
+      setErrors(prev => ({
+        ...prev,
+        socialLinks: {
+          ...prev.socialLinks,
+          [name]: undefined
+        }
+      }));
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      socialLinks: {
+        ...prev.socialLinks,
+        [name]: value
+      }
+    }));
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    // Validate site name
+    if (!formData.siteName.trim()) {
+      newErrors.siteName = "Site name is required";
+    } else if (formData.siteName.length > 50) {
+      newErrors.siteName = "Site name must be less than 50 characters";
+    }
+
+    // Validate site description
+    if (!formData.siteDescription.trim()) {
+      newErrors.siteDescription = "Site description is required";
+    } else if (formData.siteDescription.length > 200) {
+      newErrors.siteDescription = "Site description must be less than 200 characters";
+    }
+
+    // Validate email
+    if (!formData.contactEmail.trim()) {
+      newErrors.contactEmail = "Contact email is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.contactEmail)) {
+      newErrors.contactEmail = "Please enter a valid email address";
+    }
+
+    // Validate social links (optional but must be valid URLs if provided)
+    const socialErrors: typeof errors.socialLinks = {};
+
+    if (formData.socialLinks.facebook && !/^https?:\/\/[\w.-]+\.[a-z]{2,}(\S*)$/i.test(formData.socialLinks.facebook)) {
+      socialErrors.facebook = "Please enter a valid URL";
+    }
+
+    if (formData.socialLinks.twitter && !/^https?:\/\/[\w.-]+\.[a-z]{2,}(\S*)$/i.test(formData.socialLinks.twitter)) {
+      socialErrors.twitter = "Please enter a valid URL";
+    }
+
+    if (formData.socialLinks.instagram && !/^https?:\/\/[\w.-]+\.[a-z]{2,}(\S*)$/i.test(formData.socialLinks.instagram)) {
+      socialErrors.instagram = "Please enter a valid URL";
+    }
+
+    if (Object.keys(socialErrors).length > 0) {
+      newErrors.socialLinks = socialErrors;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (validateForm()) {
+      // In a real app, you would save the settings to the database here
+      console.log("Settings saved:", formData);
+
+      // Show success message
+      setShowSuccess(true);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold gold-text mb-4">Settings</h1>
       <p className="text-gray-400 mb-6">Configure your application settings</p>
 
-      <div className="bg-[#1a140d] p-6 rounded-lg border border-[#4a2e1c]">
-        <h2 className="text-xl font-bold mb-4">General Settings</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-gray-400 mb-1">Site Name</label>
-            <input
-              type="text"
-              className="w-full bg-[#2d1e14] border border-[#4a2e1c] rounded-md px-4 py-2 text-white"
-              defaultValue="TilkTibeb"
-            />
+      {/* Success message */}
+      {showSuccess && (
+        <div className="bg-green-900 border border-green-700 text-green-100 px-4 py-3 rounded-md mb-6 flex items-center justify-between">
+          <div className="flex items-center">
+            <CheckCircle className="mr-2" size={18} />
+            <span>Settings saved successfully!</span>
           </div>
-          <div>
-            <label className="block text-gray-400 mb-1">Site Description</label>
-            <textarea
-              className="w-full bg-[#2d1e14] border border-[#4a2e1c] rounded-md px-4 py-2 text-white"
-              rows={3}
-              defaultValue="Premium business book summaries and business plans"
-            />
+          <button
+            onClick={() => setShowSuccess(false)}
+            className="text-green-100 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div className="bg-[#1a140d] p-6 rounded-lg border border-[#4a2e1c] mb-6">
+          <h2 className="text-xl font-bold mb-4">General Settings</h2>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="siteName" className="block text-gray-400 mb-1">Site Name</label>
+              <input
+                id="siteName"
+                name="siteName"
+                type="text"
+                className={`w-full bg-[#2d1e14] border ${errors.siteName ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                value={formData.siteName}
+                onChange={handleInputChange}
+              />
+              {errors.siteName && <p className="text-red-500 text-sm mt-1">{errors.siteName}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="siteDescription" className="block text-gray-400 mb-1">Site Description</label>
+              <textarea
+                id="siteDescription"
+                name="siteDescription"
+                className={`w-full bg-[#2d1e14] border ${errors.siteDescription ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                rows={3}
+                value={formData.siteDescription}
+                onChange={handleInputChange}
+              />
+              {errors.siteDescription && <p className="text-red-500 text-sm mt-1">{errors.siteDescription}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="contactEmail" className="block text-gray-400 mb-1">Contact Email</label>
+              <input
+                id="contactEmail"
+                name="contactEmail"
+                type="email"
+                className={`w-full bg-[#2d1e14] border ${errors.contactEmail ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                value={formData.contactEmail}
+                onChange={handleInputChange}
+              />
+              {errors.contactEmail && <p className="text-red-500 text-sm mt-1">{errors.contactEmail}</p>}
+            </div>
           </div>
-          <button className="bg-[#c9a52c] text-[#1a140d] px-4 py-2 rounded-md font-medium hover:bg-[#d9b53c]">
+        </div>
+
+        <div className="bg-[#1a140d] p-6 rounded-lg border border-[#4a2e1c] mb-6">
+          <h2 className="text-xl font-bold mb-4">Social Media Links</h2>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="facebook" className="block text-gray-400 mb-1">Facebook URL</label>
+              <input
+                id="facebook"
+                name="facebook"
+                type="text"
+                className={`w-full bg-[#2d1e14] border ${errors.socialLinks?.facebook ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                value={formData.socialLinks.facebook}
+                onChange={handleSocialLinkChange}
+                placeholder="https://facebook.com/yourpage"
+              />
+              {errors.socialLinks?.facebook && <p className="text-red-500 text-sm mt-1">{errors.socialLinks.facebook}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="twitter" className="block text-gray-400 mb-1">Twitter URL</label>
+              <input
+                id="twitter"
+                name="twitter"
+                type="text"
+                className={`w-full bg-[#2d1e14] border ${errors.socialLinks?.twitter ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                value={formData.socialLinks.twitter}
+                onChange={handleSocialLinkChange}
+                placeholder="https://twitter.com/yourhandle"
+              />
+              {errors.socialLinks?.twitter && <p className="text-red-500 text-sm mt-1">{errors.socialLinks.twitter}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="instagram" className="block text-gray-400 mb-1">Instagram URL</label>
+              <input
+                id="instagram"
+                name="instagram"
+                type="text"
+                className={`w-full bg-[#2d1e14] border ${errors.socialLinks?.instagram ? 'border-red-500' : 'border-[#4a2e1c]'} rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#c9a52c]`}
+                value={formData.socialLinks.instagram}
+                onChange={handleSocialLinkChange}
+                placeholder="https://instagram.com/yourhandle"
+              />
+              {errors.socialLinks?.instagram && <p className="text-red-500 text-sm mt-1">{errors.socialLinks.instagram}</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="bg-[#c9a52c] text-[#1a140d] px-6 py-2 rounded-md font-medium hover:bg-[#d9b53c] focus:outline-none focus:ring-2 focus:ring-[#c9a52c] focus:ring-opacity-50"
+          >
             Save Settings
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };
