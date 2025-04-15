@@ -19,10 +19,8 @@ const PurchasesPage: React.FC = () => {
 
       setLoading(true);
       try {
-        // For development, use mock data
-        const response = getMockUserPurchases();
-        // In production, use this:
-        // const response = await getUserPurchases(user.id);
+        // Use real data from Supabase
+        const response = await getUserPurchases(user.id);
         if (response.success) {
           setPurchases(response.data);
         } else {
@@ -133,33 +131,37 @@ const PurchasesPage: React.FC = () => {
             <div className="border-b border-[#7a4528] mb-6"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {purchases
-                .filter(purchase => purchase.itemType === 'book-summary')
+                .filter(purchase => purchase.item_type === 'book-summary')
                 .map(purchase => (
                   <div key={purchase.id} className="bg-[#3a2819] rounded-lg overflow-hidden border border-[#7a4528]/30 flex flex-col h-full">
                     <div className="h-40 overflow-hidden">
                       <img
-                        src={purchase.book?.coverImage || '/placeholder-book.jpg'}
-                        alt={purchase.book?.title}
+                        src={purchase.book_summary?.cover_image || '/placeholder-book.jpg'}
+                        alt={purchase.book_summary?.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-book.jpg';
+                        }}
                       />
                     </div>
                     <div className="p-4 flex-grow flex flex-col">
                       <h3 className="text-lg font-bold mb-1">
-                        {purchase.book?.title}
+                        {purchase.book_summary?.title}
                       </h3>
                       <p className="text-gray-400 text-sm mb-3">
-                        By {purchase.book?.author}
+                        By {purchase.book_summary?.author}
                       </p>
                       <div className="flex justify-between items-center mt-auto mb-4">
                         <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-[#c9a52c]/20 text-[#c9a52c]">
-                          {purchase.book?.category}
+                          {purchase.book_summary?.category}
                         </span>
                         <span className="text-xs text-gray-400">
-                          Purchased on {formatDate(purchase.createdAt)}
+                          Purchased on {formatDate(purchase.created_at)}
                         </span>
                       </div>
                       <Link
-                        to={`/reading/${purchase.itemId}`}
+                        to={`/reading/${purchase.item_id}`}
                         className="block w-full py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
                       >
                         Read Now
@@ -167,7 +169,7 @@ const PurchasesPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              {purchases.filter(purchase => purchase.itemType === 'book-summary').length === 0 && (
+              {purchases.filter(purchase => purchase.item_type === 'book-summary').length === 0 && (
                 <div className="col-span-full text-center py-4">
                   <p className="text-gray-400">
                     No book summaries purchased yet
@@ -184,33 +186,37 @@ const PurchasesPage: React.FC = () => {
             <div className="border-b border-[#7a4528] mb-6"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {purchases
-                .filter(purchase => purchase.itemType === 'business-plan')
+                .filter(purchase => purchase.item_type === 'business-plan')
                 .map(purchase => (
                   <div key={purchase.id} className="bg-[#3a2819] rounded-lg overflow-hidden border border-[#7a4528]/30 flex flex-col h-full">
                     <div className="h-40 overflow-hidden">
                       <img
-                        src={purchase.plan?.coverImage || '/placeholder-business.jpg'}
-                        alt={purchase.plan?.title}
+                        src={purchase.business_plan?.cover_image || '/placeholder-business.jpg'}
+                        alt={purchase.business_plan?.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder-business.jpg';
+                        }}
                       />
                     </div>
                     <div className="p-4 flex-grow flex flex-col">
                       <h3 className="text-lg font-bold mb-1">
-                        {purchase.plan?.title}
+                        {purchase.business_plan?.title}
                       </h3>
                       <p className="text-gray-400 text-sm mb-3">
-                        {purchase.plan?.industry}
+                        {purchase.business_plan?.industry}
                       </p>
                       <div className="flex justify-between items-center mt-auto mb-4">
                         <span className="text-sm text-gray-300">
                           ${purchase.amount.toFixed(2)}
                         </span>
                         <span className="text-xs text-gray-400">
-                          Purchased on {formatDate(purchase.createdAt)}
+                          Purchased on {formatDate(purchase.created_at)}
                         </span>
                       </div>
                       <Link
-                        to={`/business-plans/${purchase.itemId}`}
+                        to={`/business-plans/${purchase.item_id}`}
                         className="block w-full py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
                       >
                         View Plan
@@ -218,7 +224,7 @@ const PurchasesPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              {purchases.filter(purchase => purchase.itemType === 'business-plan').length === 0 && (
+              {purchases.filter(purchase => purchase.item_type === 'business-plan').length === 0 && (
                 <div className="col-span-full text-center py-4">
                   <p className="text-gray-400">
                     No business plans purchased yet

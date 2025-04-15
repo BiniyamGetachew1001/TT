@@ -3,28 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import BookPurchase from '../components/BookPurchase';
 import { checkPurchaseStatus } from '../services/purchaseService';
+import { getBookSummaryById } from '../services/bookSummaryService';
 import { useAuth } from '../contexts/AuthContext';
+import { BookSummary } from '../lib/supabase';
 
-// This is a placeholder - in a real app, you would fetch this from your API
-const getBookById = async (id: string) => {
-  // Simulating API call
-  return {
-    id,
-    title: 'The Psychology of Money',
-    author: 'Morgan Housel',
-    description: 'Timeless lessons on wealth, greed, and happiness',
-    coverImage: '/placeholder-book.jpg',
-    category: 'Finance',
-    readTime: '15 min read',
-    price: 9.99
-  };
-};
+
 
 const BookPurchasePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const [book, setBook] = useState<any | null>(null);
+  const [book, setBook] = useState<BookSummary | null>(null);
   const [isPurchased, setIsPurchased] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +25,12 @@ const BookPurchasePage: React.FC = () => {
       setLoading(true);
       try {
         // Fetch book details
-        const bookData = await getBookById(id);
-        setBook(bookData);
+        const result = await getBookSummaryById(id);
+        if (result.success && result.data) {
+          setBook(result.data);
+        } else {
+          setError(result.message || 'Failed to load book details');
+        }
 
         // Check if user has already purchased this book
         if (isAuthenticated && user) {
@@ -104,7 +97,16 @@ const BookPurchasePage: React.FC = () => {
       </h1>
 
       <BookPurchase
-        book={book}
+        book={{
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          description: book.description,
+          coverImage: book.cover_image || '',
+          category: book.category,
+          readTime: book.read_time,
+          price: book.price
+        }}
         isPurchased={isPurchased}
         onPurchaseComplete={handlePurchaseComplete}
       />

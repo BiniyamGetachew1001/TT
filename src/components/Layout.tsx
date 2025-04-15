@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, Menu, Moon, Settings, User, X, FileText, ShoppingCart } from 'lucide-react';
+import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, LogOut, Menu, Moon, Settings, User, X, FileText, ShoppingCart, Shield, Database } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const { bookmarks } = useBookmarks();
-  const { user } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const bookmarkCount = bookmarks.length;
 
   useEffect(() => {
@@ -105,6 +105,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span>Offline Library</span>
           </Link>
 
+          {isAdmin && (
+            <>
+              <h2 className="text-xs uppercase text-gray-400 font-semibold mb-2 ml-2 mt-6">ADMIN</h2>
+              <Link to="/admin" className={`sidebar-item ${isActive('/admin') ? 'active' : ''}`}>
+                <Shield size={20} />
+                <span>Admin Dashboard</span>
+              </Link>
+              <Link to="/admin/content" className={`sidebar-item ${isActive('/admin/content') ? 'active' : ''}`}>
+                <Database size={20} />
+                <span>Content Management</span>
+              </Link>
+            </>
+          )}
+
           <h2 className="text-xs uppercase text-gray-400 font-semibold mb-2 ml-2 mt-6">ACCOUNT</h2>
           <Link to="/account" className={`sidebar-item ${isActive('/account') ? 'active' : ''}`}>
             <User size={20} />
@@ -122,10 +136,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </nav>
 
         <div className="p-3 mt-auto">
-          <Link to="#" className="sidebar-item">
-            <Moon size={20} />
-            <span>Dark Mode</span>
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link to="#" className="sidebar-item">
+              <Moon size={20} />
+              <span>Dark Mode</span>
+            </Link>
+            {user && (
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = '/';
+                }}
+                className="sidebar-item text-left"
+              >
+                <LogOut size={20} />
+                <span>Log Out</span>
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 
