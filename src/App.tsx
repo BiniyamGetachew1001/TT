@@ -16,7 +16,6 @@ import BlogPostDetailPage from './pages/BlogPostDetailPage';
 import PurchasesPage from './pages/PurchasesPage';
 import BookPurchasePage from './pages/BookPurchasePage';
 import LoginPage from './pages/LoginPage';
-import AdminPage from './pages/AdminPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { AuthProvider } from './contexts/AuthContext';
 import './index.css';
@@ -44,7 +43,6 @@ const App = () => {
             <Route path="/purchases" element={<PurchasesPage />} />
             <Route path="/books/:id/purchase" element={<BookPurchasePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/admin" element={<AdminPage />} />
             </Routes>
           </Layout>
         </BookmarkProvider>
