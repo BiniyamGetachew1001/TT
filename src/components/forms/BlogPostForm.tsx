@@ -18,9 +18,9 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
       title: '',
       content: '',
       category: '',
-      coverImage: '',
+      cover_image: '',
       status: 'draft',
-      publishedAt: null
+      published_at: null
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,12 +29,12 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     setFormData({
       ...formData,
       [name]: value
     });
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -46,39 +46,39 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
-    
+
     if (!formData.category?.trim()) {
       newErrors.category = 'Category is required';
     }
-    
+
     if (!formData.content?.trim()) {
       newErrors.content = 'Content is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
     setSuccessMessage('');
-    
-    // Set publishedAt date if status is published
+
+    // Set published_at date if status is published
     const dataToSubmit = {
       ...formData,
-      publishedAt: formData.status === 'published' ? new Date().toISOString() : null
+      published_at: formData.status === 'published' ? new Date().toISOString() : null
     };
-    
+
     try {
       if (blogPost?.id) {
         // Update existing blog post
@@ -129,13 +129,13 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           {successMessage}
         </div>
       )}
-      
+
       {errors.submit && (
         <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-4">
           {errors.submit}
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="title" className="block text-sm font-medium text-gray-200">
@@ -151,7 +151,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           />
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <label htmlFor="category" className="block text-sm font-medium text-gray-200">
             Category <span className="text-red-400">*</span>
@@ -170,7 +170,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           </select>
           {errors.category && <p className="text-red-400 text-xs mt-1">{errors.category}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <label htmlFor="status" className="block text-sm font-medium text-gray-200">
             Status
@@ -187,23 +187,23 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
             <option value="archived">Archived</option>
           </select>
         </div>
-        
+
         <div className="space-y-2 md:col-span-2">
-          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-200">
+          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
             Cover Image URL
           </label>
           <input
             type="text"
-            id="coverImage"
-            name="coverImage"
-            value={formData.coverImage || ''}
+            id="cover_image"
+            name="cover_image"
+            value={formData.cover_image || ''}
             onChange={handleChange}
             placeholder="https://example.com/image.jpg"
             className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
           />
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <label htmlFor="content" className="block text-sm font-medium text-gray-200">
           Content <span className="text-red-400">*</span>
@@ -221,7 +221,7 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           You can use Markdown formatting for rich text.
         </p>
       </div>
-      
+
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">
         <button
           type="button"

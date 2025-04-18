@@ -20,6 +20,7 @@ import AdminPage from './pages/AdminPage';
 import ContentManagementPage from './pages/ContentManagementPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 
 const App = () => {
@@ -27,8 +28,9 @@ const App = () => {
     <Router>
       <AuthProvider>
         <BookmarkProvider>
-          <Layout>
-            <Routes>
+          <ThemeProvider>
+            <Layout>
+              <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/features" element={<FeaturesPage />} />
@@ -47,8 +49,9 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/content" element={<ContentManagementPage />} />
-            </Routes>
-          </Layout>
+              </Routes>
+            </Layout>
+          </ThemeProvider>
         </BookmarkProvider>
       </AuthProvider>
     </Router>

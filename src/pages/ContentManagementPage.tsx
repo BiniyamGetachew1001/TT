@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/simple-tabs';
-import { Book, FileText, Newspaper, Plus, Search, Filter, Trash2, Edit, Eye } from 'lucide-react';
+import { Book, FileText, Newspaper, Plus, Search, Filter, Trash2, Edit, Eye, ShoppingCart, User, Calendar } from 'lucide-react';
 import { getAllBookSummaries } from '../services/bookSummaryService';
 import { getAllBusinessPlans } from '../services/businessPlanService';
 import { getAllBlogPosts } from '../services/blogService';
+import { getAllPurchases, updatePurchaseStatus } from '../services/purchaseService';
 import { deleteBookSummary, deleteBusinessPlan, deleteBlogPost } from '../services/contentManagementService';
-import { BookSummary, BusinessPlan, BlogPost } from '../lib/supabase';
+import { BookSummary, BusinessPlan, BlogPost, Purchase } from '../lib/supabase';
 import Modal from '../components/ui/modal';
 import BookSummaryForm from '../components/forms/BookSummaryForm';
 import BusinessPlanForm from '../components/forms/BusinessPlanForm';
@@ -18,6 +19,7 @@ const ContentManagementPage: React.FC = () => {
   const [bookSummaries, setBookSummaries] = useState<BookSummary[]>([]);
   const [businessPlans, setBusinessPlans] = useState<BusinessPlan[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +60,14 @@ const ContentManagementPage: React.FC = () => {
           setBlogPosts(blogResult.data as unknown as BlogPost[]);
         } else {
           setError(blogResult.message || 'Failed to fetch blog posts');
+        }
+
+        // Fetch purchases
+        const purchasesResult = await getAllPurchases();
+        if (purchasesResult.success) {
+          setPurchases(purchasesResult.data);
+        } else {
+          setError(purchasesResult.message || 'Failed to fetch purchases');
         }
 
       } catch (err: any) {
@@ -178,6 +188,31 @@ const ContentManagementPage: React.FC = () => {
       )
     : blogPosts;
 
+  const filteredPurchases = searchTerm
+    ? purchases.filter(purchase => {
+        const userEmail = purchase.user?.email || '';
+        const userName = purchase.user?.name || '';
+        const itemType = purchase.item_type || '';
+        const status = purchase.status || '';
+        const paymentId = purchase.payment_id || '';
+
+        // Get item title based on item_type
+        let itemTitle = '';
+        if (purchase.item_type === 'book-summary' && purchase.book_summary) {
+          itemTitle = purchase.book_summary.title || '';
+        } else if (purchase.item_type === 'business-plan' && purchase.business_plan) {
+          itemTitle = purchase.business_plan.title || '';
+        }
+
+        return userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          itemType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          itemTitle.toLowerCase().includes(searchTerm.toLowerCase());
+      })
+    : purchases;
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -283,6 +318,9 @@ const ContentManagementPage: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="blog-posts" className="flex items-center">
               <Newspaper size={16} className="mr-2" /> Blog Posts
+            </TabsTrigger>
+            <TabsTrigger value="purchases" className="flex items-center">
+              <ShoppingCart size={16} className="mr-2" /> Purchases
             </TabsTrigger>
           </TabsList>
 
@@ -494,7 +532,7 @@ const ContentManagementPage: React.FC = () => {
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded overflow-hidden mr-3">
                                   <img
-                                    src={post.coverImage || '/placeholder-blog.jpg'}
+                                    src={post.cover_image || '/placeholder-blog.jpg'}
                                     alt={post.title}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
@@ -508,7 +546,7 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                             <td className="p-3">{post.category}</td>
                             <td className="p-3">{post.status}</td>
-                            <td className="p-3">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : '-'}</td>
+                            <td className="p-3">{post.published_at ? new Date(post.published_at).toLocaleDateString() : '-'}</td>
                             <td className="p-3">
                               <div className="flex gap-2">
                                 <button
@@ -537,6 +575,134 @@ const ContentManagementPage: React.FC = () => {
                         <tr>
                           <td colSpan={5} className="p-6 text-center text-gray-400">
                             No blog posts found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="purchases">
+            {loading ? (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#c9a52c]"></div>
+              </div>
+            ) : error ? (
+              <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-6">
+                {error}
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-[#2d1e14] text-left">
+                        <th className="p-3 rounded-tl-lg">User</th>
+                        <th className="p-3">Item</th>
+                        <th className="p-3">Type</th>
+                        <th className="p-3">Amount</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Date</th>
+                        <th className="p-3 rounded-tr-lg">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredPurchases.length > 0 ? (
+                        filteredPurchases.map((purchase) => (
+                          <tr key={purchase.id} className="border-b border-[#3a2819] hover:bg-[#3a2819]/50">
+                            <td className="p-3">
+                              <div className="flex flex-col">
+                                <span className="font-medium">{purchase.user?.name || 'Unknown'}</span>
+                                <span className="text-xs text-gray-400">{purchase.user?.email || 'No email'}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              {purchase.item_type === 'book-summary' && purchase.book_summary ? (
+                                <span>{purchase.book_summary.title}</span>
+                              ) : purchase.item_type === 'business-plan' && purchase.business_plan ? (
+                                <span>{purchase.business_plan.title}</span>
+                              ) : (
+                                <span className="text-gray-400">Unknown item</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span className="px-2 py-1 bg-[#3a2819] rounded-full text-xs">
+                                {purchase.item_type === 'book-summary' ? 'Book' :
+                                 purchase.item_type === 'business-plan' ? 'Business Plan' :
+                                 purchase.item_type}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              {purchase.amount > 0 ? `$${purchase.amount.toFixed(2)}` : 'Free'}
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                purchase.status === 'completed' ? 'bg-green-900/30 text-green-200' :
+                                purchase.status === 'pending' ? 'bg-yellow-900/30 text-yellow-200' :
+                                purchase.status === 'refunded' ? 'bg-red-900/30 text-red-200' :
+                                'bg-[#3a2819]'
+                              }`}>
+                                {purchase.status}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              {purchase.created_at ? new Date(purchase.created_at).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex gap-2">
+                                <div className="relative group">
+                                  <button className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center">
+                                    <Edit size={14} className="mr-1" /> Status
+                                  </button>
+                                  <div className="absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-[#2d1e14] ring-1 ring-black ring-opacity-5 invisible group-hover:visible z-10">
+                                    <div className="py-1" role="menu" aria-orientation="vertical">
+                                      <button
+                                        onClick={() => {
+                                          updatePurchaseStatus(purchase.id, 'completed');
+                                          (window as any).fetchContentRef();
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-green-300 hover:bg-[#3a2819] transition-colors"
+                                      >
+                                        Completed
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          updatePurchaseStatus(purchase.id, 'pending');
+                                          (window as any).fetchContentRef();
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-yellow-300 hover:bg-[#3a2819] transition-colors"
+                                      >
+                                        Pending
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          updatePurchaseStatus(purchase.id, 'refunded');
+                                          (window as any).fetchContentRef();
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-red-300 hover:bg-[#3a2819] transition-colors"
+                                      >
+                                        Refunded
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : searchTerm ? (
+                        <tr>
+                          <td colSpan={7} className="p-6 text-center text-gray-400">
+                            No results found for "{searchTerm}"
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="p-6 text-center text-gray-400">
+                            No purchases found
                           </td>
                         </tr>
                       )}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BellRing, Book, ChevronRight, Eye, EyeOff, Moon, Palette, Settings, User } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications' | 'reading'>('profile');
@@ -12,18 +13,17 @@ const SettingsPage: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Appearance settings
-  const [darkMode, setDarkMode] = useState(true);
+
+  // Get appearance settings from ThemeContext
+  const { darkMode, toggleDarkMode, theme, setTheme } = useTheme();
   const [fontSize, setFontSize] = useState('medium');
-  const [theme, setTheme] = useState('default');
-  
+
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [newSummaries, setNewSummaries] = useState(true);
   const [newBusinessPlans, setNewBusinessPlans] = useState(true);
   const [promotions, setPromotions] = useState(false);
-  
+
   // Reading settings
   const [autoSave, setAutoSave] = useState(true);
   const [showProgressBar, setShowProgressBar] = useState(true);
@@ -53,10 +53,10 @@ const SettingsPage: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-gray-300 mb-6">Manage your account settings and preferences</p>
-        
+
         {/* Tabs */}
         <div className="tabs-container">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
@@ -65,7 +65,7 @@ const SettingsPage: React.FC = () => {
               <span>Profile</span>
             </div>
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
             onClick={() => setActiveTab('appearance')}
           >
@@ -74,7 +74,7 @@ const SettingsPage: React.FC = () => {
               <span>Appearance</span>
             </div>
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'notifications' ? 'active' : ''}`}
             onClick={() => setActiveTab('notifications')}
           >
@@ -83,7 +83,7 @@ const SettingsPage: React.FC = () => {
               <span>Notifications</span>
             </div>
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'reading' ? 'active' : ''}`}
             onClick={() => setActiveTab('reading')}
           >
@@ -93,7 +93,7 @@ const SettingsPage: React.FC = () => {
             </div>
           </button>
         </div>
-        
+
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -101,14 +101,14 @@ const SettingsPage: React.FC = () => {
             <div className="settings-card">
               <h2 className="text-xl font-bold mb-2">Personal Information</h2>
               <p className="text-gray-300 text-sm mb-4">Update your personal details</p>
-              
+
               <form onSubmit={handleSubmitProfile}>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium mb-1">First Name</label>
-                    <input 
-                      type="text" 
-                      id="firstName" 
+                    <input
+                      type="text"
+                      id="firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="glass-input w-full p-2 rounded-md input-glow"
@@ -116,50 +116,50 @@ const SettingsPage: React.FC = () => {
                   </div>
                   <div>
                     <label htmlFor="lastName" className="block text-sm font-medium mb-1">Last Name</label>
-                    <input 
-                      type="text" 
-                      id="lastName" 
+                    <input
+                      type="text"
+                      id="lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="glass-input w-full p-2 rounded-md input-glow"
                     />
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-                  <input 
-                    type="email" 
-                    id="email" 
+                  <input
+                    type="email"
+                    id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="glass-input w-full p-2 rounded-md input-glow"
                   />
                 </div>
-                
+
                 <button type="submit" className="gold-button px-4 py-2">
                   Save Changes
                 </button>
               </form>
             </div>
-            
+
             {/* Password */}
             <div className="settings-card">
               <h2 className="text-xl font-bold mb-2">Password</h2>
               <p className="text-gray-300 text-sm mb-4">Change your password</p>
-              
+
               <form onSubmit={handlePasswordUpdate}>
                 <div className="mb-4">
                   <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">Current Password</label>
                   <div className="relative">
-                    <input 
-                      type={showCurrentPassword ? "text" : "password"} 
-                      id="currentPassword" 
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      id="currentPassword"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       className="glass-input w-full p-2 rounded-md pr-10 input-glow"
                     />
-                    <button 
+                    <button
                       type="button"
                       className="absolute inset-y-0 right-0 px-3 flex items-center"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
@@ -168,18 +168,18 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="newPassword" className="block text-sm font-medium mb-1">New Password</label>
                   <div className="relative">
-                    <input 
-                      type={showNewPassword ? "text" : "password"} 
-                      id="newPassword" 
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      id="newPassword"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="glass-input w-full p-2 rounded-md pr-10 input-glow"
                     />
-                    <button 
+                    <button
                       type="button"
                       className="absolute inset-y-0 right-0 px-3 flex items-center"
                       onClick={() => setShowNewPassword(!showNewPassword)}
@@ -188,18 +188,18 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">Confirm New Password</label>
                   <div className="relative">
-                    <input 
-                      type={showConfirmPassword ? "text" : "password"} 
-                      id="confirmPassword" 
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="glass-input w-full p-2 rounded-md pr-10 input-glow"
                     />
-                    <button 
+                    <button
                       type="button"
                       className="absolute inset-y-0 right-0 px-3 flex items-center"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -208,7 +208,7 @@ const SettingsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <button type="submit" className="gold-button px-4 py-2">
                   Update Password
                 </button>
@@ -216,30 +216,30 @@ const SettingsPage: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Appearance Tab */}
         {activeTab === 'appearance' && (
           <div className="settings-card">
             <h2 className="text-xl font-bold mb-6">Appearance</h2>
-            
+
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Theme</h3>
               <div className="flex flex-wrap gap-4">
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md flex items-center gap-2 ${theme === 'default' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setTheme('default')}
                 >
                   <Moon size={18} className="text-[#c9a52c]" />
                   <span>Dark Brown (Default)</span>
                 </button>
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md flex items-center gap-2 ${theme === 'dark' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setTheme('dark')}
                 >
                   <Moon size={18} className="text-[#c9a52c]" />
                   <span>Dark</span>
                 </button>
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md flex items-center gap-2 ${theme === 'sepia' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setTheme('sepia')}
                 >
@@ -248,16 +248,16 @@ const SettingsPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Dark Mode</h3>
               <div className="flex items-center">
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={darkMode}
-                    onChange={() => setDarkMode(!darkMode)}
+                    onChange={toggleDarkMode}
                   />
                   <div className="relative w-11 h-6 bg-[#3a2819] rounded-full peer peer-checked:bg-[#c9a52c] peer-focus:ring-2 peer-focus:ring-[#c9a52c] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
                   <span className="ml-3 text-sm font-medium">
@@ -266,23 +266,23 @@ const SettingsPage: React.FC = () => {
                 </label>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium mb-3">Font Size</h3>
               <div className="flex flex-wrap gap-4">
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md ${fontSize === 'small' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setFontSize('small')}
                 >
                   Small
                 </button>
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md ${fontSize === 'medium' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setFontSize('medium')}
                 >
                   Medium
                 </button>
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md ${fontSize === 'large' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setFontSize('large')}
                 >
@@ -292,18 +292,18 @@ const SettingsPage: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="settings-card">
             <h2 className="text-xl font-bold mb-6">Notification Settings</h2>
-            
+
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Email Notifications</h3>
               <div className="flex items-center mb-4">
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={emailNotifications}
                     onChange={() => setEmailNotifications(!emailNotifications)}
@@ -315,7 +315,7 @@ const SettingsPage: React.FC = () => {
                 </label>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 glass-button rounded-md">
                 <div className="flex items-center gap-3">
@@ -326,8 +326,8 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={newSummaries}
                     onChange={() => setNewSummaries(!newSummaries)}
@@ -336,7 +336,7 @@ const SettingsPage: React.FC = () => {
                   <div className={`relative w-11 h-6 rounded-full peer ${!emailNotifications ? 'bg-[#2d1e14] opacity-50' : 'bg-[#3a2819] peer-checked:bg-[#c9a52c]'} peer-focus:ring-2 peer-focus:ring-[#c9a52c] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5`}></div>
                 </label>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 glass-button rounded-md">
                 <div className="flex items-center gap-3">
                   <BellRing size={20} className="text-[#c9a52c]" />
@@ -346,8 +346,8 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={newBusinessPlans}
                     onChange={() => setNewBusinessPlans(!newBusinessPlans)}
@@ -356,7 +356,7 @@ const SettingsPage: React.FC = () => {
                   <div className={`relative w-11 h-6 rounded-full peer ${!emailNotifications ? 'bg-[#2d1e14] opacity-50' : 'bg-[#3a2819] peer-checked:bg-[#c9a52c]'} peer-focus:ring-2 peer-focus:ring-[#c9a52c] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5`}></div>
                 </label>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 glass-button rounded-md">
                 <div className="flex items-center gap-3">
                   <BellRing size={20} className="text-[#c9a52c]" />
@@ -366,8 +366,8 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={promotions}
                     onChange={() => setPromotions(!promotions)}
@@ -379,23 +379,23 @@ const SettingsPage: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Reading Tab */}
         {activeTab === 'reading' && (
           <div className="settings-card">
             <h2 className="text-xl font-bold mb-6">Reading Preferences</h2>
-            
+
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Reading Mode</h3>
               <div className="flex flex-wrap gap-4">
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md flex items-center gap-2 ${readingMode === 'scroll' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setReadingMode('scroll')}
                 >
                   <ChevronRight size={18} className="text-[#c9a52c]" />
                   <span>Scrolling</span>
                 </button>
-                <button 
+                <button
                   className={`glass-button px-4 py-2 rounded-md flex items-center gap-2 ${readingMode === 'paginated' ? 'ring-2 ring-[#c9a52c]' : ''}`}
                   onClick={() => setReadingMode('paginated')}
                 >
@@ -404,7 +404,7 @@ const SettingsPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 glass-button rounded-md">
                 <div className="flex items-center gap-3">
@@ -415,8 +415,8 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={autoSave}
                     onChange={() => setAutoSave(!autoSave)}
@@ -424,7 +424,7 @@ const SettingsPage: React.FC = () => {
                   <div className="relative w-11 h-6 bg-[#3a2819] rounded-full peer peer-checked:bg-[#c9a52c] peer-focus:ring-2 peer-focus:ring-[#c9a52c] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
                 </label>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 glass-button rounded-md">
                 <div className="flex items-center gap-3">
                   <Book size={20} className="text-[#c9a52c]" />
@@ -434,8 +434,8 @@ const SettingsPage: React.FC = () => {
                   </div>
                 </div>
                 <label className="inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={showProgressBar}
                     onChange={() => setShowProgressBar(!showProgressBar)}

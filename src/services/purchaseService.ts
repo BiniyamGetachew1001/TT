@@ -201,3 +201,168 @@ export const getMockUserPurchases = async (userId: string) => {
 export const getMockPurchaseStatus = async (userId: string, itemType: string, itemId: string) => {
   return await checkPurchaseStatus(userId, itemType, itemId);
 };
+
+// Admin functions
+export const getAllPurchases = async () => {
+  try {
+    // First, get all purchases
+    const { data: purchasesData, error: purchasesError } = await supabase
+      .from('purchases')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Handle errors with mock data
+    if (purchasesError) {
+      // If the table doesn't exist or there's another database error, return mock data
+      if (purchasesError.code === '42P01' || purchasesError.message.includes('does not exist')) {
+        console.log('Using mock data as fallback for all purchases');
+
+        // Create mock purchases
+        const mockPurchases = mockSummaries.slice(0, 5).map((summary, index) => ({
+          id: `purchase-${index}`,
+          user_id: `user-${index % 3 + 1}`,
+          item_type: index % 2 === 0 ? 'book-summary' : 'business-plan',
+          item_id: summary.id.toString(),
+          amount: summary.isPremium ? 9.99 : 0,
+          currency: 'USD',
+          status: ['completed', 'pending', 'refunded'][index % 3],
+          payment_id: `mock-payment-${index}`,
+          created_at: new Date(Date.now() - index * 86400000).toISOString(),
+          user: {
+            email: `user${index % 3 + 1}@example.com`,
+            name: `User ${index % 3 + 1}`
+          },
+          book_summary: index % 2 === 0 ? {
+            id: summary.id.toString(),
+            title: summary.title,
+            author: summary.author,
+            category: summary.category
+          } : null,
+          business_plan: index % 2 === 1 ? {
+            id: summary.id.toString(),
+            title: `Business Plan for ${summary.title}`,
+            industry: ['Technology', 'Finance', 'Healthcare', 'Education', 'Retail'][index % 5]
+          } : null
+        }));
+
+        return {
+          success: true,
+          data: mockPurchases
+        };
+      }
+
+      throw purchasesError;
+    }
+
+    // If no purchases found, return empty array
+    if (!purchasesData || purchasesData.length === 0) {
+      return {
+        success: true,
+        data: []
+      };
+    }
+
+    // If we have purchases, fetch related data
+    // Get unique user IDs
+    const userIds = [...new Set(purchasesData.map(p => p.user_id))];
+
+    // Get users
+    const { data: usersData } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .in('id', userIds);
+
+    // Get unique item IDs for book summaries
+    const bookSummaryIds = [...new Set(
+      purchasesData
+        .filter(p => p.item_type === 'book-summary')
+        .map(p => p.item_id)
+    )];
+
+    // Get book summaries if there are any book summary purchases
+    let bookSummariesData = [];
+    if (bookSummaryIds.length > 0) {
+      const { data } = await supabase
+        .from('book_summaries')
+        .select('id, title, author, category')
+        .in('id', bookSummaryIds);
+      bookSummariesData = data || [];
+    }
+
+    // Get unique item IDs for business plans
+    const businessPlanIds = [...new Set(
+      purchasesData
+        .filter(p => p.item_type === 'business-plan')
+        .map(p => p.item_id)
+    )];
+
+    // Get business plans if there are any business plan purchases
+    let businessPlansData = [];
+    if (businessPlanIds.length > 0) {
+      const { data } = await supabase
+        .from('business_plans')
+        .select('id, title, industry')
+        .in('id', businessPlanIds);
+      businessPlansData = data || [];
+    }
+
+    // Combine the data
+    const enrichedPurchases = purchasesData.map(purchase => {
+      // Find related user
+      const user = usersData?.find(u => u.id === purchase.user_id) || {
+        email: 'unknown@example.com',
+        name: 'Unknown User'
+      };
+
+      // Find related item based on item_type
+      let item = null;
+      if (purchase.item_type === 'book-summary') {
+        item = bookSummariesData?.find(b => b.id === purchase.item_id);
+      } else if (purchase.item_type === 'business-plan') {
+        item = businessPlansData?.find(b => b.id === purchase.item_id);
+      }
+
+      return {
+        ...purchase,
+        user,
+        book_summary: purchase.item_type === 'book-summary' ? item : null,
+        business_plan: purchase.item_type === 'business-plan' ? item : null
+      };
+    });
+
+    return {
+      success: true,
+      data: enrichedPurchases
+    };
+  } catch (error: any) {
+    console.error('Error fetching all purchases:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to fetch all purchases',
+      data: []
+    };
+  }
+};
+
+export const updatePurchaseStatus = async (id: string, status: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('purchases')
+      .update({ status })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data: data[0]
+    };
+  } catch (error: any) {
+    console.error('Error updating purchase status:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to update purchase status'
+    };
+  }
+};

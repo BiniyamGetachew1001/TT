@@ -23,9 +23,9 @@ export type BlogPost = {
   content: string;
   category: string;
   status: 'draft' | 'published' | 'archived';
-  publishedAt: string | null;
-  authorId?: string;
-  coverImage: string;
+  published_at: string | null; // Changed from publishedAt to published_at
+  author_id?: string; // Changed from authorId to author_id
+  cover_image: string; // Changed from coverImage to cover_image
   excerpt?: string;
   tags?: string[];
   created_at: string;

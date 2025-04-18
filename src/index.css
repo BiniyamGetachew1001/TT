@@ -12,18 +12,74 @@
 
 body {
   @apply bg-[#2d1e14] text-white m-0 p-0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+  @apply bg-[#2d1e14] text-white;
+}
+
+body:not(.dark-mode) {
+  @apply bg-[#f5f5f5] text-[#333];
+}
+
+/* Theme Styles */
+body.theme-default {
+  @apply bg-[#2d1e14] text-white;
+}
+
+body.theme-dark {
+  @apply bg-[#121212] text-white;
+}
+
+body.theme-sepia {
+  @apply bg-[#f8f1e3] text-[#5f4b32];
 }
 
 .sidebar-item {
-  @apply flex items-center gap-3 py-3 px-4 text-white hover:bg-[#4a2e1c] rounded-md transition-all duration-300 hover:scale-105 hover:pl-5;
+  @apply flex items-center gap-3 py-3 px-4 rounded-md transition-all duration-300 hover:scale-105 hover:pl-5;
+}
+
+body.dark-mode .sidebar-item {
+  @apply text-white hover:bg-[#4a2e1c];
+}
+
+body:not(.dark-mode) .sidebar-item {
+  @apply text-[#333] hover:bg-[#e5e5e5];
 }
 
 .sidebar-item.active {
   @apply bg-[#4a2e1c];
 }
 
+body:not(.dark-mode) .sidebar-item.active {
+  @apply bg-[#e5e5e5];
+}
+
+/* Bottom border styles */
+.bottom-border {
+  @apply border-t;
+}
+
+body.dark-mode .bottom-border {
+  @apply border-[#4a2e1c] border-opacity-30;
+}
+
+body:not(.dark-mode) .bottom-border {
+  @apply border-gray-200;
+}
+
 .main-gradient {
+  transition: background 0.3s ease;
+}
+
+body.dark-mode .main-gradient {
   background: linear-gradient(to bottom, #2d1e14 90%, #3a2819);
+}
+
+body:not(.dark-mode) .main-gradient {
+  background: linear-gradient(to bottom, #f5f5f5 90%, #e5e5e5);
 }
 
 .gold-text {
@@ -35,24 +91,64 @@ body {
 }
 
 .secondary-button {
-  @apply bg-[#3a2819] hover:bg-[#4a2e1c] text-white font-medium py-2 px-6 rounded-md transition-all duration-300 border border-[#7a4528] hover:shadow-[0_0_15px_rgba(122,69,40,0.5)] hover:scale-105;
+  @apply font-medium py-2 px-6 rounded-md transition-all duration-300 hover:scale-105;
+}
+
+body.dark-mode .secondary-button {
+  @apply bg-[#3a2819] hover:bg-[#4a2e1c] text-white border border-[#7a4528] hover:shadow-[0_0_15px_rgba(122,69,40,0.5)];
+}
+
+body:not(.dark-mode) .secondary-button {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
 }
 
 /* Glassmorphism effects */
 .glass-card {
-  @apply bg-[#2d1e14]/80 backdrop-blur-sm border border-[#7a4528]/30 rounded-xl shadow-lg;
+  @apply backdrop-blur-sm rounded-xl shadow-lg transition-all duration-300;
+}
+
+body.dark-mode .glass-card {
+  @apply bg-[#2d1e14]/80 border border-[#7a4528]/30;
+}
+
+body:not(.dark-mode) .glass-card {
+  @apply bg-white/80 border border-gray-200/30;
 }
 
 .glass-navbar {
-  @apply bg-[#2d1e14]/90 backdrop-blur-md border-b border-[#7a4528]/30;
+  @apply backdrop-blur-md transition-all duration-300;
+}
+
+body.dark-mode .glass-navbar {
+  @apply bg-[#2d1e14]/90 border-b border-[#7a4528]/30;
+}
+
+body:not(.dark-mode) .glass-navbar {
+  @apply bg-white/90 border-b border-gray-200/30;
 }
 
 .glass-button {
-  @apply bg-[#3a2819]/80 backdrop-blur-sm border border-[#7a4528]/50 hover:bg-[#4a2e1c]/90 hover:border-[#c9a52c]/50 hover:shadow-[0_0_15px_rgba(122,69,40,0.3)] transition-all duration-300 hover:scale-105;
+  @apply backdrop-blur-sm transition-all duration-300 hover:scale-105;
+}
+
+body.dark-mode .glass-button {
+  @apply bg-[#3a2819]/80 border border-[#7a4528]/50 hover:bg-[#4a2e1c]/90 hover:border-[#c9a52c]/50 hover:shadow-[0_0_15px_rgba(122,69,40,0.3)];
+}
+
+body:not(.dark-mode) .glass-button {
+  @apply bg-gray-200/80 border border-gray-300/50 hover:bg-gray-300/90 hover:border-gray-400/50 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)];
 }
 
 .glass-input {
-  @apply bg-[#3a2819]/80 backdrop-blur-sm border border-[#7a4528]/50 focus:border-[#c9a52c]/70 focus:outline-none focus:ring-1 focus:ring-[#c9a52c] transition-all duration-300;
+  @apply backdrop-blur-sm focus:outline-none focus:ring-1 transition-all duration-300;
+}
+
+body.dark-mode .glass-input {
+  @apply bg-[#3a2819]/80 border border-[#7a4528]/50 focus:border-[#c9a52c]/70 focus:ring-[#c9a52c] text-white;
+}
+
+body:not(.dark-mode) .glass-input {
+  @apply bg-white/80 border border-gray-300/50 focus:border-gray-400/70 focus:ring-gray-400 text-gray-800;
 }
 
 .tabs-container {

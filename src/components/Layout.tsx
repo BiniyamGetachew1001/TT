@@ -4,6 +4,7 @@ import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, LogOut, Menu, 
 import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Footer from './Footer';
 
 interface LayoutProps {
@@ -15,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { bookmarks } = useBookmarks();
   const { user, isAdmin, logout } = useAuth();
+  const { darkMode, toggleDarkMode } = useTheme();
   const bookmarkCount = bookmarks.length;
 
   useEffect(() => {
@@ -128,19 +130,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <CreditCard size={20} />
             <span>Pricing</span>
           </Link>
-          <Link to="/settings" className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}>
-            <Settings size={20} />
-            <span>Settings</span>
-          </Link>
-
         </nav>
 
-        <div className="p-3 mt-auto">
+        {/* Bottom navigation items */}
+        <div className="p-3 mt-auto bottom-border pt-4">
           <div className="flex flex-col gap-2">
-            <Link to="#" className="sidebar-item">
-              <Moon size={20} />
-              <span>Dark Mode</span>
+            <Link to="/settings" className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}>
+              <Settings size={20} />
+              <span>Settings</span>
             </Link>
+            <button
+              onClick={toggleDarkMode}
+              className="sidebar-item text-left"
+            >
+              <Moon size={20} />
+              <span>Dark Mode: {darkMode ? 'On' : 'Off'}</span>
+            </button>
             {user && (
               <button
                 onClick={async () => {
