@@ -2,7 +2,7 @@
 
 ## Phase 1: Setup & Authentication
 1. Initialize Next.js project with TypeScript
-2. Set up Supabase client with Model Context Protocol (MCP)
+2. Set up Supabase client with TypeScript types
 3. Configure authentication flow
 4. Create user roles (admin vs regular users)
 5. Implement navigation bar with conditional admin access

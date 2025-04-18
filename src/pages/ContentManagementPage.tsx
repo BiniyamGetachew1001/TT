@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/simple-tabs';
-import { Book, FileText, Newspaper, Plus, Search, Filter, Trash2, Edit, Eye, ShoppingCart, User, Calendar } from 'lucide-react';
+import { Book, FileText, Newspaper, Plus, Search, Trash2, Edit, Eye, ShoppingCart, User, Calendar } from 'lucide-react';
 import { getAllBookSummaries } from '../services/bookSummaryService';
 import { getAllBusinessPlans } from '../services/businessPlanService';
 import { getAllBlogPosts } from '../services/blogService';
@@ -780,3 +780,8 @@ const ContentManagementPage: React.FC = () => {
 };
 
 export default ContentManagementPage;
+
+
+
+
+
