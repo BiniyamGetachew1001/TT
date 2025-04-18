@@ -20,14 +20,14 @@ export type User = {
 export type BlogPost = {
   id: string;
   title: string;
-  excerpt: string;
   content: string;
   category: string;
-  tags: string[];
-  status: string;
-  published_at: string | null;
-  author_id: string;
-  cover_image: string;
+  status: 'draft' | 'published' | 'archived';
+  publishedAt: string | null;
+  authorId?: string;
+  coverImage: string;
+  excerpt?: string;
+  tags?: string[];
   created_at: string;
   updated_at: string;
 };
