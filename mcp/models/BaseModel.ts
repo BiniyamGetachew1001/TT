@@ -1,9 +1,6 @@
 // Import supabase client from the correct location
 import { supabase } from '../../src/lib/supabase';
 
-// Or if you need to create this file:
-// Remove the import entirely if the client module doesn't exist yet
-
 export class BaseModel {
   protected static tableName: string;
   
