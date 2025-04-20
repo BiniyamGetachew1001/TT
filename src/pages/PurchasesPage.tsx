@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Book, FileText } from 'lucide-react';
-import { getUserPurchases, getMockUserPurchases } from '../services/purchaseService';
+import { Book, FileText, Search, Calendar, DollarSign, ShoppingCart, Filter } from 'lucide-react';
+import { getUserPurchases } from '../services/purchaseService';
 import { useAuth } from '../contexts/AuthContext';
+import PurchaseDetailModal from '../components/PurchaseDetailModal';
 
 const PurchasesPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // State for purchase details modal
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Stats
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [bookCount, setBookCount] = useState(0);
+  const [planCount, setPlanCount] = useState(0);
+
+  // Filtering and sorting
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('date-desc');
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     const fetchPurchases = async () => {
@@ -23,6 +38,16 @@ const PurchasesPage: React.FC = () => {
         const response = await getUserPurchases(user.id);
         if (response.success) {
           setPurchases(response.data);
+
+          // Calculate stats
+          const books = response.data.filter(p => p.item_type === 'book-summary');
+          const plans = response.data.filter(p => p.item_type === 'business-plan');
+
+          setBookCount(books.length);
+          setPlanCount(plans.length);
+
+          const total = response.data.reduce((sum, purchase) => sum + purchase.amount, 0);
+          setTotalSpent(total);
         } else {
           setError(response.message || 'Failed to fetch purchases');
         }
@@ -86,6 +111,87 @@ const PurchasesPage: React.FC = () => {
     );
   }
 
+  // Open purchase detail modal
+  const handleOpenPurchaseDetail = (purchase: any) => {
+    setSelectedPurchase(purchase);
+    setIsDetailModalOpen(true);
+  };
+
+  // Filter and sort purchases
+  const getFilteredAndSortedPurchases = () => {
+    // First apply type filter
+    let filtered = [...purchases];
+
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(purchase => purchase.item_type === activeFilter);
+    }
+
+    // Then apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(purchase => {
+        const searchLower = searchTerm.toLowerCase();
+
+        // Get the appropriate item based on type
+        const item = purchase.item_type === 'book-summary'
+          ? purchase.book_summary
+          : purchase.business_plan;
+
+        if (!item) return false;
+
+        // Search in different fields based on item type
+        if (purchase.item_type === 'book-summary') {
+          return (
+            item.title?.toLowerCase().includes(searchLower) ||
+            item.author?.toLowerCase().includes(searchLower) ||
+            item.category?.toLowerCase().includes(searchLower)
+          );
+        } else {
+          return (
+            item.title?.toLowerCase().includes(searchLower) ||
+            item.industry?.toLowerCase().includes(searchLower)
+          );
+        }
+      });
+    }
+
+    // Finally apply sorting
+    return filtered.sort((a, b) => {
+      switch (sortOption) {
+        case 'date-asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'date-desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'price-asc':
+          return a.amount - b.amount;
+        case 'price-desc':
+          return b.amount - a.amount;
+        case 'title-asc':
+          const titleA = a.item_type === 'book-summary'
+            ? a.book_summary?.title || ''
+            : a.business_plan?.title || '';
+          const titleB = b.item_type === 'book-summary'
+            ? b.book_summary?.title || ''
+            : b.business_plan?.title || '';
+          return titleA.localeCompare(titleB);
+        case 'title-desc':
+          const titleC = a.item_type === 'book-summary'
+            ? a.book_summary?.title || ''
+            : a.business_plan?.title || '';
+          const titleD = b.item_type === 'book-summary'
+            ? b.book_summary?.title || ''
+            : b.business_plan?.title || '';
+          return titleD.localeCompare(titleC);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Get filtered purchases
+  const filteredPurchases = getFilteredAndSortedPurchases();
+  const filteredBookSummaries = filteredPurchases.filter(p => p.item_type === 'book-summary');
+  const filteredBusinessPlans = filteredPurchases.filter(p => p.item_type === 'business-plan');
+
   return (
     <div className="max-w-6xl mx-auto py-6 px-4">
       <div className="mb-8">
@@ -96,6 +202,95 @@ const PurchasesPage: React.FC = () => {
           View and access all your purchased content
         </p>
       </div>
+
+      {/* Search and Filter Controls */}
+      {purchases.length > 0 && (
+        <div className="mb-8 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search size={16} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by title, author, or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+            >
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="title-asc">Title: A-Z</option>
+              <option value="title-desc">Title: Z-A</option>
+            </select>
+
+            <div className="flex items-center gap-2 bg-[#2d1e14] border border-[#7a4528]/50 rounded-md px-3">
+              <Filter size={16} className="text-gray-400" />
+              <select
+                value={activeFilter}
+                onChange={(e) => setActiveFilter(e.target.value)}
+                className="bg-transparent border-none text-white focus:outline-none py-2"
+              >
+                <option value="all">All Types</option>
+                <option value="book-summary">Books Only</option>
+                <option value="business-plan">Business Plans Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      {purchases.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-[#3a2819] rounded-lg p-6 border border-[#7a4528]/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Purchases</p>
+                <h3 className="text-2xl font-bold mt-1">{purchases.length}</h3>
+              </div>
+              <div className="bg-[#c9a52c]/20 p-3 rounded-full">
+                <ShoppingCart size={24} className="text-[#c9a52c]" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#3a2819] rounded-lg p-6 border border-[#7a4528]/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Spent</p>
+                <h3 className="text-2xl font-bold mt-1">${totalSpent.toFixed(2)}</h3>
+              </div>
+              <div className="bg-[#c9a52c]/20 p-3 rounded-full">
+                <DollarSign size={24} className="text-[#c9a52c]" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#3a2819] rounded-lg p-6 border border-[#7a4528]/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Latest Purchase</p>
+                <h3 className="text-lg font-bold mt-1">
+                  {purchases.length > 0 ? formatDate(purchases[0].created_at) : 'N/A'}
+                </h3>
+              </div>
+              <div className="bg-[#c9a52c]/20 p-3 rounded-full">
+                <Calendar size={24} className="text-[#c9a52c]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {purchases.length === 0 ? (
         <div className="text-center py-12">
@@ -122,6 +317,25 @@ const PurchasesPage: React.FC = () => {
             </Link>
           </div>
         </div>
+      ) : filteredPurchases.length === 0 ? (
+        <div className="text-center py-12 bg-[#2d1e14] rounded-lg border border-[#7a4528]/30 p-6">
+          <h2 className="text-xl font-semibold mb-2">
+            No results found
+          </h2>
+          <p className="text-gray-400 mb-6">
+            Try adjusting your search or filter criteria
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSortOption('date-desc');
+              setActiveFilter('all');
+            }}
+            className="inline-flex items-center px-6 py-3 bg-[#c9a52c] text-[#2d1e14] font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
       ) : (
         <>
           <div className="mb-8">
@@ -130,9 +344,7 @@ const PurchasesPage: React.FC = () => {
             </h2>
             <div className="border-b border-[#7a4528] mb-6"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {purchases
-                .filter(purchase => purchase.item_type === 'book-summary')
-                .map(purchase => (
+              {filteredBookSummaries.map(purchase => (
                   <div key={purchase.id} className="bg-[#3a2819] rounded-lg overflow-hidden border border-[#7a4528]/30 flex flex-col h-full">
                     <div className="h-40 overflow-hidden">
                       <img
@@ -160,16 +372,24 @@ const PurchasesPage: React.FC = () => {
                           Purchased on {formatDate(purchase.created_at)}
                         </span>
                       </div>
-                      <Link
-                        to={`/reading/${purchase.item_id}`}
-                        className="block w-full py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
-                      >
-                        Read Now
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/reading/${purchase.item_id}`}
+                          className="flex-1 py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
+                        >
+                          Read Now
+                        </Link>
+                        <button
+                          onClick={() => handleOpenPurchaseDetail(purchase)}
+                          className="px-3 py-2 border border-[#7a4528] rounded-md hover:bg-[#4a3829] transition-colors"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
-              {purchases.filter(purchase => purchase.item_type === 'book-summary').length === 0 && (
+              {filteredBookSummaries.length === 0 && (
                 <div className="col-span-full text-center py-4">
                   <p className="text-gray-400">
                     No book summaries purchased yet
@@ -185,9 +405,7 @@ const PurchasesPage: React.FC = () => {
             </h2>
             <div className="border-b border-[#7a4528] mb-6"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {purchases
-                .filter(purchase => purchase.item_type === 'business-plan')
-                .map(purchase => (
+              {filteredBusinessPlans.map(purchase => (
                   <div key={purchase.id} className="bg-[#3a2819] rounded-lg overflow-hidden border border-[#7a4528]/30 flex flex-col h-full">
                     <div className="h-40 overflow-hidden">
                       <img
@@ -215,16 +433,24 @@ const PurchasesPage: React.FC = () => {
                           Purchased on {formatDate(purchase.created_at)}
                         </span>
                       </div>
-                      <Link
-                        to={`/business-plans/${purchase.item_id}`}
-                        className="block w-full py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
-                      >
-                        View Plan
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/business-plans/${purchase.item_id}`}
+                          className="flex-1 py-2 bg-[#c9a52c] text-[#2d1e14] text-center font-medium rounded-md hover:bg-[#b08d1e] transition-colors"
+                        >
+                          View Plan
+                        </Link>
+                        <button
+                          onClick={() => handleOpenPurchaseDetail(purchase)}
+                          className="px-3 py-2 border border-[#7a4528] rounded-md hover:bg-[#4a3829] transition-colors"
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
-              {purchases.filter(purchase => purchase.item_type === 'business-plan').length === 0 && (
+              {filteredBusinessPlans.length === 0 && (
                 <div className="col-span-full text-center py-4">
                   <p className="text-gray-400">
                     No business plans purchased yet
@@ -235,6 +461,13 @@ const PurchasesPage: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Purchase Detail Modal */}
+      <PurchaseDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        purchase={selectedPurchase}
+      />
     </div>
   );
 };
