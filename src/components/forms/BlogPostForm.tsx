@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { BlogPost } from '../../lib/supabase';
 import { createBlogPost, updateBlogPost } from '../../services/contentManagementService';
+import RichTextEditor from '../ui/rich-text-editor';
+import ImageUpload from '../ui/image-upload';
+// Import components
 
 interface BlogPostFormProps {
   blogPost?: BlogPost;
@@ -188,18 +191,17 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           </select>
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
-            Cover Image URL
-          </label>
-          <input
-            type="text"
-            id="cover_image"
-            name="cover_image"
-            value={formData.cover_image || ''}
-            onChange={handleChange}
-            placeholder="https://example.com/image.jpg"
-            className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+        {/* Replace simple input with ImageUpload component */}
+        <div className="md:col-span-2">
+          <ImageUpload
+            currentImageUrl={formData.cover_image || null}
+            onImageChange={(imageUrl) => {
+              setFormData({
+                ...formData,
+                cover_image: imageUrl || ''
+              });
+            }}
+            label="Cover Image URL"
           />
         </div>
       </div>
@@ -208,17 +210,31 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
         <label htmlFor="content" className="block text-sm font-medium text-gray-200">
           Content <span className="text-red-400">*</span>
         </label>
-        <textarea
+        {/* Replace textarea with RichTextEditor */}
+        <RichTextEditor
           id="content"
           name="content"
-          rows={12}
           value={formData.content || ''}
-          onChange={handleChange}
-          className={`w-full rounded-md bg-[#2d1e14] border ${errors.content ? 'border-red-500' : 'border-[#7a4528]/50'} px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
+          onChange={(content) => {
+            // Update the formData with the new content
+            setFormData({
+              ...formData,
+              content
+            });
+
+            // Clear error for this field if any
+            if (errors.content) {
+              setErrors({
+                ...errors,
+                content: ''
+              });
+            }
+          }}
+          error={errors.content}
+          height={500}
         />
-        {errors.content && <p className="text-red-400 text-xs mt-1">{errors.content}</p>}
         <p className="text-xs text-gray-400 mt-1">
-          You can use Markdown formatting for rich text.
+          Use the rich text editor to format your content.
         </p>
       </div>
 

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { BusinessPlan } from '../../lib/supabase';
 import { createBusinessPlan, updateBusinessPlan } from '../../services/contentManagementService';
+import RichTextEditor from '../ui/rich-text-editor';
+import ImageUpload from '../ui/image-upload';
+// Import components
 
 interface BusinessPlanFormProps {
   businessPlan?: BusinessPlan;
@@ -29,7 +32,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Handle price as a number
     if (name === 'price') {
       setFormData({
@@ -42,7 +45,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
         [name]: value
       });
     }
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -54,33 +57,33 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
-    
+
     if (!formData.industry?.trim()) {
       newErrors.industry = 'Industry is required';
     }
-    
+
     if (formData.price === undefined || formData.price < 0) {
       newErrors.price = 'Price must be a positive number or zero';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
     setSuccessMessage('');
-    
+
     try {
       if (businessPlan?.id) {
         // Update existing business plan
@@ -133,13 +136,13 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           {successMessage}
         </div>
       )}
-      
+
       {errors.submit && (
         <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-4">
           {errors.submit}
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label htmlFor="title" className="block text-sm font-medium text-gray-200">
@@ -155,7 +158,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           />
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <label htmlFor="industry" className="block text-sm font-medium text-gray-200">
             Industry <span className="text-red-400">*</span>
@@ -174,7 +177,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           </select>
           {errors.industry && <p className="text-red-400 text-xs mt-1">{errors.industry}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <label htmlFor="price" className="block text-sm font-medium text-gray-200">
             Price <span className="text-red-400">*</span>
@@ -196,23 +199,20 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           </div>
           {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
         </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
-            Cover Image URL
-          </label>
-          <input
-            type="text"
-            id="cover_image"
-            name="cover_image"
-            value={formData.cover_image || ''}
-            onChange={handleChange}
-            placeholder="https://example.com/image.jpg"
-            className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
-          />
-        </div>
+
+        {/* Replace simple input with ImageUpload component */}
+        <ImageUpload
+          currentImageUrl={formData.cover_image || null}
+          onImageChange={(imageUrl) => {
+            setFormData({
+              ...formData,
+              cover_image: imageUrl || ''
+            });
+          }}
+          label="Cover Image URL"
+        />
       </div>
-      
+
       <div className="space-y-2">
         <label htmlFor="description" className="block text-sm font-medium text-gray-200">
           Description
@@ -226,21 +226,39 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-      
+
       <div className="space-y-2">
         <label htmlFor="content" className="block text-sm font-medium text-gray-200">
           Content
         </label>
-        <textarea
+        {/* Replace textarea with RichTextEditor */}
+        <RichTextEditor
           id="content"
           name="content"
-          rows={8}
           value={formData.content || ''}
-          onChange={handleChange}
-          className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+          onChange={(content) => {
+            // Update the formData with the new content
+            setFormData({
+              ...formData,
+              content
+            });
+
+            // Clear error for this field if any
+            if (errors.content) {
+              setErrors({
+                ...errors,
+                content: ''
+              });
+            }
+          }}
+          error={errors.content}
+          height={400}
         />
+        <p className="text-xs text-gray-400 mt-1">
+          Use the rich text editor to format your business plan content.
+        </p>
       </div>
-      
+
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">
         <button
           type="button"

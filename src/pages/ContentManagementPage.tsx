@@ -7,7 +7,7 @@ import { getAllBookSummaries } from '../services/bookSummaryService';
 import { getAllBusinessPlans } from '../services/businessPlanService';
 import { getAllBlogPosts } from '../services/blogService';
 import { getAllPurchases, updatePurchaseStatus } from '../services/purchaseService';
-import { deleteBookSummary, deleteBusinessPlan, deleteBlogPost } from '../services/contentManagementService';
+import { deleteBookSummary, deleteBusinessPlan, deleteBlogPost, updateBlogPost } from '../services/contentManagementService';
 import { BookSummary, BusinessPlan, BlogPost, Purchase } from '../lib/supabase';
 import Modal from '../components/ui/modal';
 import BookSummaryForm from '../components/forms/BookSummaryForm';
@@ -31,6 +31,11 @@ const ContentManagementPage: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, type: 'book' | 'business' | 'blog'} | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // State for bulk actions
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
+  const [selectedBusinessIds, setSelectedBusinessIds] = useState<string[]>([]);
+  const [selectedBlogIds, setSelectedBlogIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -262,49 +267,17 @@ const ContentManagementPage: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-2xl md:text-3xl font-bold">Content Management</h1>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search size={16} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
-              />
+          <div className="relative flex-grow max-w-md">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search size={16} className="text-gray-400" />
             </div>
-
-            <div className="flex gap-2">
-              <div className="relative group">
-                <button className="gold-button flex items-center">
-                  <Plus size={16} className="mr-1" /> Add New Content
-                </button>
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#2d1e14] ring-1 ring-black ring-opacity-5 invisible group-hover:visible z-10">
-                  <div className="py-1" role="menu" aria-orientation="vertical">
-                    <button
-                      onClick={() => handleOpenModal('book')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <Book size={16} className="mr-2" /> Book Summary
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal('business')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <FileText size={16} className="mr-2" /> Business Plan
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal('blog')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <Newspaper size={16} className="mr-2" /> Blog Post
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <input
+              type="text"
+              placeholder="Search content..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+            />
           </div>
         </div>
 
@@ -335,11 +308,84 @@ const ContentManagementPage: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* Book Summary Actions */}
+                <div className="mb-4 flex justify-between items-center">
+                  {/* Bulk Actions */}
+                  <div className="flex items-center gap-2">
+                    {selectedBookIds.length > 0 && (
+                      <div className="relative inline-block text-left">
+                        <select
+                          className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                          onChange={(e) => {
+                            const action = e.target.value;
+                            if (!action) return;
+
+                            // Handle bulk actions
+                            if (action === 'delete') {
+                              // Confirm before deleting
+                              if (window.confirm(`Are you sure you want to delete ${selectedBookIds.length} selected items?`)) {
+                                // Delete selected items
+                                Promise.all(selectedBookIds.map(id => deleteBookSummary(id)))
+                                  .then(() => {
+                                    setBookSummaries(prev => prev.filter(item => !selectedBookIds.includes(item.id)));
+                                    setSelectedBookIds([]);
+                                    setActionSuccess(`Deleted ${selectedBookIds.length} book summaries successfully`);
+                                  })
+                                  .catch(err => {
+                                    setError(`Failed to delete some items: ${err.message}`);
+                                  });
+                              }
+                            }
+
+                            // Reset the select
+                            e.target.value = '';
+                          }}
+                        >
+                          <option value="">Bulk Actions ({selectedBookIds.length} selected)</option>
+                          <option value="delete">Delete Selected</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {selectedBookIds.length > 0 && (
+                      <button
+                        onClick={() => setSelectedBookIds([])}
+                        className="text-sm text-gray-400 hover:text-white"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Add New Button */}
+                  <button
+                    onClick={() => handleOpenModal('book')}
+                    className="gold-button flex items-center"
+                  >
+                    <Plus size={16} className="mr-1" /> Add Book Summary
+                  </button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#2d1e14] text-left">
-                        <th className="p-3 rounded-tl-lg">Title</th>
+                        <th className="p-3 rounded-tl-lg w-10">
+                          <input
+                            type="checkbox"
+                            className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                            checked={filteredBookSummaries.length > 0 && selectedBookIds.length === filteredBookSummaries.length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // Select all
+                                setSelectedBookIds(filteredBookSummaries.map(book => book.id));
+                              } else {
+                                // Deselect all
+                                setSelectedBookIds([]);
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="p-3">Title</th>
                         <th className="p-3">Author</th>
                         <th className="p-3">Category</th>
                         <th className="p-3">Price</th>
@@ -350,6 +396,20 @@ const ContentManagementPage: React.FC = () => {
                       {filteredBookSummaries.length > 0 ? (
                         filteredBookSummaries.map((book) => (
                           <tr key={book.id} className="border-b border-[#3a2819] hover:bg-[#3a2819]/50">
+                            <td className="p-3">
+                              <input
+                                type="checkbox"
+                                className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                                checked={selectedBookIds.includes(book.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedBookIds(prev => [...prev, book.id]);
+                                  } else {
+                                    setSelectedBookIds(prev => prev.filter(id => id !== book.id));
+                                  }
+                                }}
+                              />
+                            </td>
                             <td className="p-3">
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded overflow-hidden mr-3">
@@ -424,11 +484,84 @@ const ContentManagementPage: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* Business Plan Actions */}
+                <div className="mb-4 flex justify-between items-center">
+                  {/* Bulk Actions */}
+                  <div className="flex items-center gap-2">
+                    {selectedBusinessIds.length > 0 && (
+                      <div className="relative inline-block text-left">
+                        <select
+                          className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                          onChange={(e) => {
+                            const action = e.target.value;
+                            if (!action) return;
+
+                            // Handle bulk actions
+                            if (action === 'delete') {
+                              // Confirm before deleting
+                              if (window.confirm(`Are you sure you want to delete ${selectedBusinessIds.length} selected items?`)) {
+                                // Delete selected items
+                                Promise.all(selectedBusinessIds.map(id => deleteBusinessPlan(id)))
+                                  .then(() => {
+                                    setBusinessPlans(prev => prev.filter(item => !selectedBusinessIds.includes(item.id)));
+                                    setSelectedBusinessIds([]);
+                                    setActionSuccess(`Deleted ${selectedBusinessIds.length} business plans successfully`);
+                                  })
+                                  .catch(err => {
+                                    setError(`Failed to delete some items: ${err.message}`);
+                                  });
+                              }
+                            }
+
+                            // Reset the select
+                            e.target.value = '';
+                          }}
+                        >
+                          <option value="">Bulk Actions ({selectedBusinessIds.length} selected)</option>
+                          <option value="delete">Delete Selected</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {selectedBusinessIds.length > 0 && (
+                      <button
+                        onClick={() => setSelectedBusinessIds([])}
+                        className="text-sm text-gray-400 hover:text-white"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Add New Button */}
+                  <button
+                    onClick={() => handleOpenModal('business')}
+                    className="gold-button flex items-center"
+                  >
+                    <Plus size={16} className="mr-1" /> Add Business Plan
+                  </button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#2d1e14] text-left">
-                        <th className="p-3 rounded-tl-lg">Title</th>
+                        <th className="p-3 rounded-tl-lg w-10">
+                          <input
+                            type="checkbox"
+                            className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                            checked={filteredBusinessPlans.length > 0 && selectedBusinessIds.length === filteredBusinessPlans.length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // Select all
+                                setSelectedBusinessIds(filteredBusinessPlans.map(plan => plan.id));
+                              } else {
+                                // Deselect all
+                                setSelectedBusinessIds([]);
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="p-3">Title</th>
                         <th className="p-3">Author</th>
                         <th className="p-3">Industry</th>
                         <th className="p-3">Price</th>
@@ -439,6 +572,20 @@ const ContentManagementPage: React.FC = () => {
                       {filteredBusinessPlans.length > 0 ? (
                         filteredBusinessPlans.map((plan) => (
                           <tr key={plan.id} className="border-b border-[#3a2819] hover:bg-[#3a2819]/50">
+                            <td className="p-3">
+                              <input
+                                type="checkbox"
+                                className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                                checked={selectedBusinessIds.includes(plan.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedBusinessIds(prev => [...prev, plan.id]);
+                                  } else {
+                                    setSelectedBusinessIds(prev => prev.filter(id => id !== plan.id));
+                                  }
+                                }}
+                              />
+                            </td>
                             <td className="p-3">
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded overflow-hidden mr-3">
@@ -513,11 +660,129 @@ const ContentManagementPage: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* Blog Post Actions */}
+                <div className="mb-4 flex justify-between items-center">
+                  {/* Bulk Actions */}
+                  <div className="flex items-center gap-2">
+                    {selectedBlogIds.length > 0 && (
+                      <div className="relative inline-block text-left">
+                        <select
+                          className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                          onChange={(e) => {
+                            const action = e.target.value;
+                            if (!action) return;
+
+                            // Handle bulk actions
+                            if (action === 'delete') {
+                              // Confirm before deleting
+                              if (window.confirm(`Are you sure you want to delete ${selectedBlogIds.length} selected items?`)) {
+                                // Delete selected items
+                                Promise.all(selectedBlogIds.map(id => deleteBlogPost(id)))
+                                  .then(() => {
+                                    setBlogPosts(prev => prev.filter(item => !selectedBlogIds.includes(item.id)));
+                                    setSelectedBlogIds([]);
+                                    setActionSuccess(`Deleted ${selectedBlogIds.length} blog posts successfully`);
+                                  })
+                                  .catch(err => {
+                                    setError(`Failed to delete some items: ${err.message}`);
+                                  });
+                              }
+                            } else if (action === 'publish') {
+                              // Publish selected items
+                              const updates = selectedBlogIds.map(id => {
+                                const post = blogPosts.find(p => p.id === id);
+                                if (post) {
+                                  return updateBlogPost(id, {
+                                    status: 'published',
+                                    published_at: new Date().toISOString()
+                                  });
+                                }
+                                return Promise.resolve({ success: false });
+                              });
+
+                              Promise.all(updates)
+                                .then(() => {
+                                  // Refresh the data
+                                  if ((window as any).fetchContentRef) {
+                                    (window as any).fetchContentRef();
+                                  }
+                                  setSelectedBlogIds([]);
+                                  setActionSuccess(`Published ${selectedBlogIds.length} blog posts successfully`);
+                                })
+                                .catch(err => {
+                                  setError(`Failed to publish some items: ${err.message}`);
+                                });
+                            } else if (action === 'archive') {
+                              // Archive selected items
+                              const updates = selectedBlogIds.map(id => {
+                                return updateBlogPost(id, { status: 'archived' });
+                              });
+
+                              Promise.all(updates)
+                                .then(() => {
+                                  // Refresh the data
+                                  if ((window as any).fetchContentRef) {
+                                    (window as any).fetchContentRef();
+                                  }
+                                  setSelectedBlogIds([]);
+                                  setActionSuccess(`Archived ${selectedBlogIds.length} blog posts successfully`);
+                                })
+                                .catch(err => {
+                                  setError(`Failed to archive some items: ${err.message}`);
+                                });
+                            }
+
+                            // Reset the select
+                            e.target.value = '';
+                          }}
+                        >
+                          <option value="">Bulk Actions ({selectedBlogIds.length} selected)</option>
+                          <option value="publish">Publish Selected</option>
+                          <option value="archive">Archive Selected</option>
+                          <option value="delete">Delete Selected</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {selectedBlogIds.length > 0 && (
+                      <button
+                        onClick={() => setSelectedBlogIds([])}
+                        className="text-sm text-gray-400 hover:text-white"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Add New Button */}
+                  <button
+                    onClick={() => handleOpenModal('blog')}
+                    className="gold-button flex items-center"
+                  >
+                    <Plus size={16} className="mr-1" /> Add Blog Post
+                  </button>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#2d1e14] text-left">
-                        <th className="p-3 rounded-tl-lg">Title</th>
+                        <th className="p-3 rounded-tl-lg w-10">
+                          <input
+                            type="checkbox"
+                            className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                            checked={filteredBlogPosts.length > 0 && selectedBlogIds.length === filteredBlogPosts.length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                // Select all
+                                setSelectedBlogIds(filteredBlogPosts.map(post => post.id));
+                              } else {
+                                // Deselect all
+                                setSelectedBlogIds([]);
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="p-3">Title</th>
                         <th className="p-3">Category</th>
                         <th className="p-3">Status</th>
                         <th className="p-3">Published</th>
@@ -528,6 +793,20 @@ const ContentManagementPage: React.FC = () => {
                       {filteredBlogPosts.length > 0 ? (
                         filteredBlogPosts.map((post) => (
                           <tr key={post.id} className="border-b border-[#3a2819] hover:bg-[#3a2819]/50">
+                            <td className="p-3">
+                              <input
+                                type="checkbox"
+                                className="rounded border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                                checked={selectedBlogIds.includes(post.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedBlogIds(prev => [...prev, post.id]);
+                                  } else {
+                                    setSelectedBlogIds(prev => prev.filter(id => id !== post.id));
+                                  }
+                                }}
+                              />
+                            </td>
                             <td className="p-3">
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded overflow-hidden mr-3">
@@ -545,7 +824,16 @@ const ContentManagementPage: React.FC = () => {
                               </div>
                             </td>
                             <td className="p-3">{post.category}</td>
-                            <td className="p-3">{post.status}</td>
+                            <td className="p-3">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                post.status === 'published' ? 'bg-green-900/30 text-green-200' :
+                                post.status === 'draft' ? 'bg-yellow-900/30 text-yellow-200' :
+                                post.status === 'archived' ? 'bg-gray-900/30 text-gray-200' :
+                                'bg-[#3a2819]'
+                              }`}>
+                                {post.status}
+                              </span>
+                            </td>
                             <td className="p-3">{post.published_at ? new Date(post.published_at).toLocaleDateString() : '-'}</td>
                             <td className="p-3">
                               <div className="flex gap-2">
@@ -596,6 +884,21 @@ const ContentManagementPage: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* Add filters and management options for purchases */}
+                <div className="mb-4 flex justify-end gap-2">
+                  <select
+                    className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                    onChange={(e) => {
+                      // Filter by status functionality can be implemented here
+                      console.log('Filter by status:', e.target.value);
+                    }}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
