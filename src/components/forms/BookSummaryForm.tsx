@@ -25,7 +25,8 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
       category: '',
       cover_image: '',
       read_time: '',
-      price: 0
+      price: 0,
+      is_free: false
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,8 +73,8 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
       newErrors.category = 'Category is required';
     }
 
-    if (formData.price === undefined || formData.price < 0) {
-      newErrors.price = 'Price must be a positive number or zero';
+    if (!formData.is_free && (formData.price === undefined || formData.price <= 0)) {
+      newErrors.price = 'Price must be greater than zero for paid content';
     }
 
     setErrors(newErrors);
@@ -227,29 +228,64 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           </select>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-            Price <span className="text-red-400">*</span>
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-gray-400">$</span>
+        {/* Pricing Options */}
+        <div className="space-y-4 md:col-span-2">
+          {/* Free/Paid Toggle */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-200">
+              Pricing Option <span className="text-red-400">*</span>
+            </label>
+            <div className="flex items-center space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="is_free"
+                  checked={formData.is_free === true}
+                  onChange={() => setFormData({ ...formData, is_free: true, price: 0 })}
+                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
+                />
+                <span className="ml-2 text-gray-200">Free</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="is_free"
+                  checked={formData.is_free === false}
+                  onChange={() => setFormData({ ...formData, is_free: false })}
+                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
+                />
+                <span className="ml-2 text-gray-200">Paid</span>
+              </label>
             </div>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              min="0"
-              step="0.01"
-              value={formData.price || 0}
-              onChange={handleChange}
-              className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
-            />
           </div>
-          {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
+
+          {/* Price (only shown if paid option is selected) */}
+          {formData.is_free === false && (
+            <div className="space-y-2">
+              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+                Price <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <span className="text-gray-400">$</span>
+                </div>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.price || 0}
+                  onChange={handleChange}
+                  className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
+                />
+              </div>
+              {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
+            </div>
+          )}
         </div>
 
-        {/* Replace simple input with ImageUpload component */}
+        {/* Enhanced ImageUpload component with file upload */}
         <ImageUpload
           currentImageUrl={formData.cover_image || null}
           onImageChange={(imageUrl) => {
@@ -258,7 +294,8 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
               cover_image: imageUrl || ''
             });
           }}
-          label="Cover Image URL"
+          label="Cover Image"
+          maxHeight={400} // Taller preview with scrolling
         />
       </div>
 

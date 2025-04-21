@@ -18,6 +18,9 @@ import BookPurchasePage from './pages/BookPurchasePage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import ContentManagementPage from './pages/ContentManagementPage';
+import BookSummaryEditorPage from './pages/BookSummaryEditorPage';
+import BlogPostEditorPage from './pages/BlogPostEditorPage';
+import BusinessPlanEditorPage from './pages/BusinessPlanEditorPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -49,6 +52,12 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/content" element={<ContentManagementPage />} />
+            <Route path="/admin/book-summaries/new" element={<BookSummaryEditorPage />} />
+            <Route path="/admin/book-summaries/edit/:id" element={<BookSummaryEditorPage />} />
+            <Route path="/admin/blog-posts/new" element={<BlogPostEditorPage />} />
+            <Route path="/admin/blog-posts/edit/:id" element={<BlogPostEditorPage />} />
+            <Route path="/admin/business-plans/new" element={<BusinessPlanEditorPage />} />
+            <Route path="/admin/business-plans/edit/:id" element={<BusinessPlanEditorPage />} />
               </Routes>
             </Layout>
           </ThemeProvider>

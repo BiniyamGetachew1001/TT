@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/simple-tabs';
 import { Book, FileText, Newspaper, Plus, Search, Trash2, Edit, Eye, ShoppingCart, User, Calendar } from 'lucide-react';
+import ActivityLog from '../components/ui/activity-log';
+import FilterBar from '../components/ui/filter-bar';
 import { getAllBookSummaries } from '../services/bookSummaryService';
 import { getAllBusinessPlans } from '../services/businessPlanService';
 import { getAllBlogPosts } from '../services/blogService';
@@ -23,6 +25,23 @@ const ContentManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filtering and sorting states
+  const [bookFilter, setBookFilter] = useState('');
+  const [bookSort, setBookSort] = useState('title');
+  const [bookSortDirection, setBookSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const [businessFilter, setBusinessFilter] = useState('');
+  const [businessSort, setBusinessSort] = useState('title');
+  const [businessSortDirection, setBusinessSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const [blogFilter, setBlogFilter] = useState('');
+  const [blogSort, setBlogSort] = useState('title');
+  const [blogSortDirection, setBlogSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const [purchaseFilter, setPurchaseFilter] = useState('');
+  const [purchaseSort, setPurchaseSort] = useState('created_at');
+  const [purchaseSortDirection, setPurchaseSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,17 +119,44 @@ const ContentManagementPage: React.FC = () => {
     }
   }, [actionSuccess]);
 
-  // Handler functions
-  const handleOpenModal = (type: 'book' | 'business' | 'blog', item?: BookSummary | BusinessPlan | BlogPost) => {
-    setModalType(type);
-    setEditItem(item || null);
-    setIsModalOpen(true);
+  // Navigation functions for editor pages
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Set the active tab based on URL parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      // The tab parameter is used by the Tabs component
+    }
+  }, [searchParams]);
+
+  const handleAddNew = (type: 'book' | 'business' | 'blog') => {
+    switch (type) {
+      case 'book':
+        navigate('/admin/book-summaries/new');
+        break;
+      case 'business':
+        navigate('/admin/business-plans/new');
+        break;
+      case 'blog':
+        navigate('/admin/blog-posts/new');
+        break;
+    }
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalType(null);
-    setEditItem(null);
+  const handleEdit = (type: 'book' | 'business' | 'blog', id: string) => {
+    switch (type) {
+      case 'book':
+        navigate(`/admin/book-summaries/edit/${id}`);
+        break;
+      case 'business':
+        navigate(`/admin/business-plans/edit/${id}`);
+        break;
+      case 'blog':
+        navigate(`/admin/blog-posts/edit/${id}`);
+        break;
+    }
   };
 
   const handleOpenDeleteConfirm = (id: string, type: 'book' | 'business' | 'blog') => {
@@ -170,53 +216,168 @@ const ContentManagementPage: React.FC = () => {
     }
   };
 
-  // Filter functions
-  const filteredBookSummaries = searchTerm
-    ? bookSummaries.filter(book =>
+  // Filter and sort functions
+  const filteredBookSummaries = bookSummaries
+    .filter(book => {
+      // Apply search filter
+      const matchesSearch = !searchTerm ||
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.category.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : bookSummaries;
+        book.category.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredBusinessPlans = searchTerm
-    ? businessPlans.filter(plan =>
+      // Apply category filter
+      const matchesFilter = !bookFilter || book.category === bookFilter;
+
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Apply sorting
+      if (bookSort === 'title') {
+        return bookSortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title);
+      } else if (bookSort === 'author') {
+        return bookSortDirection === 'asc'
+          ? a.author.localeCompare(b.author)
+          : b.author.localeCompare(a.author);
+      } else if (bookSort === 'price') {
+        return bookSortDirection === 'asc'
+          ? a.price - b.price
+          : b.price - a.price;
+      } else if (bookSort === 'created_at') {
+        return bookSortDirection === 'asc'
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    });
+
+  const filteredBusinessPlans = businessPlans
+    .filter(plan => {
+      // Apply search filter
+      const matchesSearch = !searchTerm ||
         plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.industry.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : businessPlans;
+        plan.industry.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredBlogPosts = searchTerm
-    ? blogPosts.filter(post =>
+      // Apply industry filter
+      const matchesFilter = !businessFilter || plan.industry === businessFilter;
+
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Apply sorting
+      if (businessSort === 'title') {
+        return businessSortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title);
+      } else if (businessSort === 'industry') {
+        return businessSortDirection === 'asc'
+          ? a.industry.localeCompare(b.industry)
+          : b.industry.localeCompare(a.industry);
+      } else if (businessSort === 'price') {
+        return businessSortDirection === 'asc'
+          ? a.price - b.price
+          : b.price - a.price;
+      } else if (businessSort === 'created_at') {
+        return businessSortDirection === 'asc'
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    });
+
+  const filteredBlogPosts = blogPosts
+    .filter(post => {
+      // Apply search filter
+      const matchesSearch = !searchTerm ||
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.category.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : blogPosts;
+        post.category.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredPurchases = searchTerm
-    ? purchases.filter(purchase => {
-        const userEmail = purchase.user?.email || '';
-        const userName = purchase.user?.name || '';
-        const itemType = purchase.item_type || '';
-        const status = purchase.status || '';
-        const paymentId = purchase.payment_id || '';
+      // Apply status filter
+      const matchesFilter = !blogFilter || post.status === blogFilter;
 
-        // Get item title based on item_type
-        let itemTitle = '';
-        if (purchase.item_type === 'book-summary' && purchase.book_summary) {
-          itemTitle = purchase.book_summary.title || '';
-        } else if (purchase.item_type === 'business-plan' && purchase.business_plan) {
-          itemTitle = purchase.business_plan.title || '';
-        }
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Apply sorting
+      if (blogSort === 'title') {
+        return blogSortDirection === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title);
+      } else if (blogSort === 'category') {
+        return blogSortDirection === 'asc'
+          ? a.category.localeCompare(b.category)
+          : b.category.localeCompare(a.category);
+      } else if (blogSort === 'status') {
+        return blogSortDirection === 'asc'
+          ? a.status.localeCompare(b.status)
+          : b.status.localeCompare(a.status);
+      } else if (blogSort === 'published_at') {
+        // Handle null published_at dates
+        if (!a.published_at && !b.published_at) return 0;
+        if (!a.published_at) return blogSortDirection === 'asc' ? 1 : -1;
+        if (!b.published_at) return blogSortDirection === 'asc' ? -1 : 1;
 
-        return userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          itemType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          itemTitle.toLowerCase().includes(searchTerm.toLowerCase());
-      })
-    : purchases;
+        return blogSortDirection === 'asc'
+          ? new Date(a.published_at).getTime() - new Date(b.published_at).getTime()
+          : new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+      } else if (blogSort === 'created_at') {
+        return blogSortDirection === 'asc'
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    });
+
+  const filteredPurchases = purchases
+    .filter(purchase => {
+      // Apply search filter
+      const userEmail = purchase.user?.email || '';
+      const userName = purchase.user?.name || '';
+      const itemType = purchase.item_type || '';
+      const status = purchase.status || '';
+      const paymentId = purchase.payment_id || '';
+
+      // Get item title based on item_type
+      let itemTitle = '';
+      if (purchase.item_type === 'book-summary' && purchase.book_summary) {
+        itemTitle = purchase.book_summary.title || '';
+      } else if (purchase.item_type === 'business-plan' && purchase.business_plan) {
+        itemTitle = purchase.business_plan.title || '';
+      }
+
+      const matchesSearch = !searchTerm ||
+        userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        itemType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        itemTitle.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Apply status filter
+      const matchesFilter = !purchaseFilter || purchase.status === purchaseFilter;
+
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Apply sorting
+      if (purchaseSort === 'created_at') {
+        return purchaseSortDirection === 'asc'
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (purchaseSort === 'amount') {
+        return purchaseSortDirection === 'asc'
+          ? a.amount - b.amount
+          : b.amount - a.amount;
+      } else if (purchaseSort === 'status') {
+        const statusA = a.status || '';
+        const statusB = b.status || '';
+        return purchaseSortDirection === 'asc'
+          ? statusA.localeCompare(statusB)
+          : statusB.localeCompare(statusA);
+      }
+      return 0;
+    });
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -257,7 +418,8 @@ const ContentManagementPage: React.FC = () => {
 
   return (
     <div className="p-6 md:p-10">
-      <div className="max-w-6xl mx-auto">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:flex-grow">
         {actionSuccess && (
           <div className="bg-green-900/30 border border-green-500/50 text-green-200 px-4 py-3 rounded-md mb-6">
             {actionSuccess}
@@ -312,6 +474,32 @@ const ContentManagementPage: React.FC = () => {
                 <div className="mb-4 flex justify-between items-center">
                   {/* Bulk Actions */}
                   <div className="flex items-center gap-2">
+
+                  {/* Filter and Sort Options */}
+                  <FilterBar
+                    filterOptions={[
+                      { label: 'All Categories', value: '' },
+                      { label: 'Business', value: 'Business' },
+                      { label: 'Self-Help', value: 'Self-Help' },
+                      { label: 'Finance', value: 'Finance' },
+                      { label: 'Leadership', value: 'Leadership' },
+                      { label: 'Productivity', value: 'Productivity' }
+                    ]}
+                    sortOptions={[
+                      { label: 'Title', value: 'title' },
+                      { label: 'Author', value: 'author' },
+                      { label: 'Price', value: 'price' },
+                      { label: 'Date Added', value: 'created_at' }
+                    ]}
+                    onFilterChange={setBookFilter}
+                    onSortChange={(sort, direction) => {
+                      setBookSort(sort);
+                      setBookSortDirection(direction);
+                    }}
+                    activeFilter={bookFilter}
+                    activeSort={bookSort}
+                    activeSortDirection={bookSortDirection}
+                  />
                     {selectedBookIds.length > 0 && (
                       <div className="relative inline-block text-left">
                         <select
@@ -359,7 +547,7 @@ const ContentManagementPage: React.FC = () => {
 
                   {/* Add New Button */}
                   <button
-                    onClick={() => handleOpenModal('book')}
+                    onClick={() => handleAddNew('book')}
                     className="gold-button flex items-center"
                   >
                     <Plus size={16} className="mr-1" /> Add Book Summary
@@ -438,7 +626,7 @@ const ContentManagementPage: React.FC = () => {
                             <td className="p-3">
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleOpenModal('book', book)}
+                                  onClick={() => handleEdit('book', book.id)}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
@@ -488,6 +676,32 @@ const ContentManagementPage: React.FC = () => {
                 <div className="mb-4 flex justify-between items-center">
                   {/* Bulk Actions */}
                   <div className="flex items-center gap-2">
+
+                  {/* Filter and Sort Options */}
+                  <FilterBar
+                    filterOptions={[
+                      { label: 'All Industries', value: '' },
+                      { label: 'Technology', value: 'Technology' },
+                      { label: 'Food & Beverage', value: 'Food & Beverage' },
+                      { label: 'Healthcare', value: 'Healthcare' },
+                      { label: 'Retail', value: 'Retail' },
+                      { label: 'Education', value: 'Education' }
+                    ]}
+                    sortOptions={[
+                      { label: 'Title', value: 'title' },
+                      { label: 'Industry', value: 'industry' },
+                      { label: 'Price', value: 'price' },
+                      { label: 'Date Added', value: 'created_at' }
+                    ]}
+                    onFilterChange={setBusinessFilter}
+                    onSortChange={(sort, direction) => {
+                      setBusinessSort(sort);
+                      setBusinessSortDirection(direction);
+                    }}
+                    activeFilter={businessFilter}
+                    activeSort={businessSort}
+                    activeSortDirection={businessSortDirection}
+                  />
                     {selectedBusinessIds.length > 0 && (
                       <div className="relative inline-block text-left">
                         <select
@@ -535,7 +749,7 @@ const ContentManagementPage: React.FC = () => {
 
                   {/* Add New Button */}
                   <button
-                    onClick={() => handleOpenModal('business')}
+                    onClick={() => handleAddNew('business')}
                     className="gold-button flex items-center"
                   >
                     <Plus size={16} className="mr-1" /> Add Business Plan
@@ -614,7 +828,7 @@ const ContentManagementPage: React.FC = () => {
                             <td className="p-3">
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleOpenModal('business', plan)}
+                                  onClick={() => handleEdit('business', plan.id)}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
@@ -664,6 +878,32 @@ const ContentManagementPage: React.FC = () => {
                 <div className="mb-4 flex justify-between items-center">
                   {/* Bulk Actions */}
                   <div className="flex items-center gap-2">
+
+                  {/* Filter and Sort Options */}
+                  <FilterBar
+                    filterOptions={[
+                      { label: 'All Statuses', value: '' },
+                      { label: 'Published', value: 'published' },
+                      { label: 'Draft', value: 'draft' },
+                      { label: 'Scheduled', value: 'scheduled' },
+                      { label: 'Archived', value: 'archived' }
+                    ]}
+                    sortOptions={[
+                      { label: 'Title', value: 'title' },
+                      { label: 'Category', value: 'category' },
+                      { label: 'Status', value: 'status' },
+                      { label: 'Publish Date', value: 'published_at' },
+                      { label: 'Date Added', value: 'created_at' }
+                    ]}
+                    onFilterChange={setBlogFilter}
+                    onSortChange={(sort, direction) => {
+                      setBlogSort(sort);
+                      setBlogSortDirection(direction);
+                    }}
+                    activeFilter={blogFilter}
+                    activeSort={blogSort}
+                    activeSortDirection={blogSortDirection}
+                  />
                     {selectedBlogIds.length > 0 && (
                       <div className="relative inline-block text-left">
                         <select
@@ -688,16 +928,13 @@ const ContentManagementPage: React.FC = () => {
                                   });
                               }
                             } else if (action === 'publish') {
-                              // Publish selected items
+                              // Publish selected items immediately
                               const updates = selectedBlogIds.map(id => {
-                                const post = blogPosts.find(p => p.id === id);
-                                if (post) {
-                                  return updateBlogPost(id, {
-                                    status: 'published',
-                                    published_at: new Date().toISOString()
-                                  });
-                                }
-                                return Promise.resolve({ success: false });
+                                return updateBlogPost(id, {
+                                  status: 'published',
+                                  published_at: new Date().toISOString(),
+                                  scheduled_for: null
+                                });
                               });
 
                               Promise.all(updates)
@@ -711,6 +948,34 @@ const ContentManagementPage: React.FC = () => {
                                 })
                                 .catch(err => {
                                   setError(`Failed to publish some items: ${err.message}`);
+                                });
+                            } else if (action === 'schedule') {
+                              // Schedule selected items for tomorrow
+                              const tomorrow = new Date();
+                              tomorrow.setDate(tomorrow.getDate() + 1);
+                              tomorrow.setHours(9, 0, 0, 0); // 9:00 AM tomorrow
+
+                              const scheduledDate = tomorrow.toISOString();
+
+                              const updates = selectedBlogIds.map(id => {
+                                return updateBlogPost(id, {
+                                  status: 'scheduled',
+                                  published_at: null,
+                                  scheduled_for: scheduledDate
+                                });
+                              });
+
+                              Promise.all(updates)
+                                .then(() => {
+                                  // Refresh the data
+                                  if ((window as any).fetchContentRef) {
+                                    (window as any).fetchContentRef();
+                                  }
+                                  setSelectedBlogIds([]);
+                                  setActionSuccess(`Scheduled ${selectedBlogIds.length} blog posts for ${tomorrow.toLocaleString()}`);
+                                })
+                                .catch(err => {
+                                  setError(`Failed to schedule some items: ${err.message}`);
                                 });
                             } else if (action === 'archive') {
                               // Archive selected items
@@ -737,9 +1002,10 @@ const ContentManagementPage: React.FC = () => {
                           }}
                         >
                           <option value="">Bulk Actions ({selectedBlogIds.length} selected)</option>
-                          <option value="publish">Publish Selected</option>
-                          <option value="archive">Archive Selected</option>
-                          <option value="delete">Delete Selected</option>
+                          <option value="publish">Publish Now</option>
+                          <option value="schedule">Schedule for Tomorrow</option>
+                          <option value="archive">Archive</option>
+                          <option value="delete">Delete</option>
                         </select>
                       </div>
                     )}
@@ -756,7 +1022,7 @@ const ContentManagementPage: React.FC = () => {
 
                   {/* Add New Button */}
                   <button
-                    onClick={() => handleOpenModal('blog')}
+                    onClick={() => handleAddNew('blog')}
                     className="gold-button flex items-center"
                   >
                     <Plus size={16} className="mr-1" /> Add Blog Post
@@ -828,17 +1094,23 @@ const ContentManagementPage: React.FC = () => {
                               <span className={`px-2 py-1 rounded-full text-xs ${
                                 post.status === 'published' ? 'bg-green-900/30 text-green-200' :
                                 post.status === 'draft' ? 'bg-yellow-900/30 text-yellow-200' :
+                                post.status === 'scheduled' ? 'bg-blue-900/30 text-blue-200' :
                                 post.status === 'archived' ? 'bg-gray-900/30 text-gray-200' :
                                 'bg-[#3a2819]'
                               }`}>
-                                {post.status}
+                                {post.status === 'scheduled' ? 'Scheduled' : post.status}
                               </span>
+                              {post.status === 'scheduled' && post.scheduled_for && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  {new Date(post.scheduled_for).toLocaleString()}
+                                </div>
+                              )}
                             </td>
                             <td className="p-3">{post.published_at ? new Date(post.published_at).toLocaleDateString() : '-'}</td>
                             <td className="p-3">
                               <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleOpenModal('blog', post)}
+                                  onClick={() => handleEdit('blog', post.id)}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
@@ -884,20 +1156,32 @@ const ContentManagementPage: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* Add filters and management options for purchases */}
-                <div className="mb-4 flex justify-end gap-2">
-                  <select
-                    className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
-                    onChange={(e) => {
-                      // Filter by status functionality can be implemented here
-                      console.log('Filter by status:', e.target.value);
-                    }}
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="completed">Completed</option>
-                    <option value="pending">Pending</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
+                {/* Purchase Actions */}
+                <div className="mb-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {/* Filter and Sort Options */}
+                    <FilterBar
+                      filterOptions={[
+                        { label: 'All Statuses', value: '' },
+                        { label: 'Completed', value: 'completed' },
+                        { label: 'Pending', value: 'pending' },
+                        { label: 'Refunded', value: 'refunded' }
+                      ]}
+                      sortOptions={[
+                        { label: 'Date', value: 'created_at' },
+                        { label: 'Amount', value: 'amount' },
+                        { label: 'Status', value: 'status' }
+                      ]}
+                      onFilterChange={setPurchaseFilter}
+                      onSortChange={(sort, direction) => {
+                        setPurchaseSort(sort);
+                        setPurchaseSortDirection(direction);
+                      }}
+                      activeFilter={purchaseFilter}
+                      activeSort={purchaseSort}
+                      activeSortDirection={purchaseSortDirection}
+                    />
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -1018,37 +1302,13 @@ const ContentManagementPage: React.FC = () => {
         </Tabs>
       </div>
 
-      {/* Content Creation/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={`${editItem ? 'Edit' : 'Create'} ${modalType === 'book' ? 'Book Summary' : modalType === 'business' ? 'Business Plan' : 'Blog Post'}`}
-        size="lg"
-      >
-        {modalType === 'book' && (
-          <BookSummaryForm
-            bookSummary={editItem as BookSummary}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
+        {/* Activity Log Sidebar */}
+        <div className="lg:w-80">
+          <ActivityLog limit={15} className="sticky top-6" />
+        </div>
+      </div>
 
-        {modalType === 'business' && (
-          <BusinessPlanForm
-            businessPlan={editItem as BusinessPlan}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
-
-        {modalType === 'blog' && (
-          <BlogPostForm
-            blogPost={editItem as BlogPost}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
-      </Modal>
+      {/* No longer need the content creation/edit modal as we're using separate pages */}
 
       {/* Delete Confirmation Modal */}
       <Modal
