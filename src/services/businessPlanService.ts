@@ -1,4 +1,4 @@
-import { supabase, adminSupabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import type { BusinessPlan } from '../lib/supabase';
 
 export const getAllBusinessPlans = async (industry?: string) => {
@@ -58,29 +58,6 @@ export const getBusinessPlanById = async (id: string) => {
 
 export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' | 'created_at' | 'updated_at'>) => {
   try {
-    // Check if user is authenticated
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Authentication error:', sessionError);
-      throw new Error('You must be logged in to create content');
-    }
-
-    if (!sessionData.session) {
-      // For development/testing, we'll use a mock session
-      console.warn('No active session found. Using mock data for development.');
-
-      // Return mock success response
-      return {
-        success: true,
-        data: {
-          id: `mock-${Date.now()}`,
-          ...businessPlan,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as BusinessPlan
-      };
-    }
-
     // Handle cover image upload if it's a data URL
     let coverImage = businessPlan.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -102,30 +79,13 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
       coverImage = urlData.publicUrl;
     }
 
-    // Ensure all required fields are present
-    const businessPlanData = {
-      ...businessPlan,
-      cover_image: coverImage,
-      is_free: businessPlan.is_free || false,
-      content: businessPlan.content || '',
-      description: businessPlan.description || '',
-      author: businessPlan.author || 'Admin',
-      read_time: businessPlan.read_time || '15 min',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    // Use adminSupabase to bypass RLS for development
-    const { data, error } = await adminSupabase
+    const { data, error } = await supabase
       .from('business_plans')
-      .insert([businessPlanData])
+      .insert([{ ...businessPlan, cover_image: coverImage }])
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     return {
       success: true,
@@ -143,28 +103,6 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
 
 export const updateBusinessPlan = async (id: string, businessPlan: Partial<BusinessPlan>) => {
   try {
-    // Check if user is authenticated
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Authentication error:', sessionError);
-      throw new Error('You must be logged in to update content');
-    }
-
-    if (!sessionData.session) {
-      // For development/testing, we'll use a mock session
-      console.warn('No active session found. Using mock data for development.');
-
-      // Return mock success response
-      return {
-        success: true,
-        data: {
-          id,
-          ...businessPlan,
-          updated_at: new Date().toISOString()
-        } as BusinessPlan
-      };
-    }
-
     // Handle cover image upload if it's a data URL
     let coverImage = businessPlan.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -186,31 +124,14 @@ export const updateBusinessPlan = async (id: string, businessPlan: Partial<Busin
       coverImage = urlData.publicUrl;
     }
 
-    // Ensure all required fields are present
-    const updateData = {
-      ...businessPlan,
-      cover_image: coverImage,
-      is_free: businessPlan.is_free !== undefined ? businessPlan.is_free : false,
-      // Only include these fields if they're being updated
-      ...(businessPlan.content !== undefined ? { content: businessPlan.content } : {}),
-      ...(businessPlan.description !== undefined ? { description: businessPlan.description } : {}),
-      ...(businessPlan.author !== undefined ? { author: businessPlan.author } : {}),
-      ...(businessPlan.read_time !== undefined ? { read_time: businessPlan.read_time } : {}),
-      updated_at: new Date().toISOString()
-    };
-
-    // Use adminSupabase to bypass RLS for development
-    const { data, error } = await adminSupabase
+    const { data, error } = await supabase
       .from('business_plans')
-      .update(updateData)
+      .update({ ...businessPlan, cover_image: coverImage, updated_at: new Date() })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     return {
       success: true,
@@ -228,33 +149,12 @@ export const updateBusinessPlan = async (id: string, businessPlan: Partial<Busin
 
 export const deleteBusinessPlan = async (id: string) => {
   try {
-    // Check if user is authenticated
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-      console.error('Authentication error:', sessionError);
-      throw new Error('You must be logged in to delete content');
-    }
-
-    if (!sessionData.session) {
-      // For development/testing, we'll use a mock session
-      console.warn('No active session found. Using mock data for development.');
-
-      // Return mock success response
-      return {
-        success: true
-      };
-    }
-
-    // Use adminSupabase to bypass RLS for development
-    const { error } = await adminSupabase
+    const { error } = await supabase
       .from('business_plans')
       .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
+    if (error) throw error;
 
     return {
       success: true

@@ -614,6 +614,83 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* Free Sample Content Section */}
+      <section className="py-12 px-6 md:px-10 bg-[#3a2819]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">Try Before You Buy</h2>
+            <p className="text-gray-300">Get a taste of our premium content with this free sample</p>
+          </div>
+
+          <div className="glass-card overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+              {/* Book Cover */}
+              <div className="md:col-span-1 h-full">
+                <div className="h-full bg-[#2d1e14] p-6 flex items-center justify-center">
+                  <div className="relative w-full max-w-xs mx-auto">
+                    <img
+                      src="https://images.unsplash.com/photo-1550399504-8953e1a6ac87?q=80&w=300&auto=format&fit=crop"
+                      alt="Atomic Habits by James Clear"
+                      className="w-full h-auto rounded-md shadow-lg"
+                    />
+                    <div className="absolute top-0 right-0 bg-[#c9a52c] text-[#2d1e14] text-xs px-2 py-0.5 rounded-bl rounded-tr">
+                      FREE
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Book Summary */}
+              <div className="md:col-span-2 p-6 md:p-8">
+                <div className="mb-4">
+                  <h3 className="text-2xl font-bold mb-1">Atomic Habits</h3>
+                  <p className="text-gray-400">by James Clear • 16 min read</p>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-gray-300 mb-4">
+                    An Easy & Proven Way to Build Good Habits & Break Bad Ones
+                  </p>
+                  <p className="text-gray-300 mb-4">
+                    Atomic Habits offers a proven framework for improving every day. James Clear reveals practical strategies that will teach you exactly how to form good habits, break bad ones, and master the tiny behaviors that lead to remarkable results.
+                  </p>
+                  <p className="text-gray-300">
+                    If you're having trouble changing your habits, the problem isn't you. The problem is your system. Bad habits repeat themselves again and again not because you don't want to change, but because you have the wrong system for change...
+                  </p>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold mb-2">Key Insights:</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2">
+                      <div className="text-[#c9a52c] mt-1">•</div>
+                      <span className="text-gray-300">Small habits compound into remarkable results over time</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="text-[#c9a52c] mt-1">•</div>
+                      <span className="text-gray-300">Focus on systems instead of goals for long-term change</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="text-[#c9a52c] mt-1">•</div>
+                      <span className="text-gray-300">The four laws of behavior change: make it obvious, attractive, easy, and satisfying</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <Link to="/books/5" className="gold-button">
+                    Read Full Summary
+                  </Link>
+                  <Link to="/pricing" className="secondary-button">
+                    Unlock All Summaries
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-12 px-6 md:px-10 bg-[#2d1e14]">
         <div className="max-w-6xl mx-auto">
@@ -780,21 +857,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* TILKTIBEB Footer Section - This now uses the global Footer component in Layout.tsx */}
-      <section className="py-6 px-6 md:px-10 bg-[#2d1e14] border-t border-[#4a2e1c]/50">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-2 mb-3">
-            <Book className="text-[#c9a52c]" size={24} />
-            <h2 className="text-xl font-bold text-white">TILKTIBEB</h2>
-          </div>
-          <p className="text-sm text-gray-400 mb-4">
-            Premium business book summaries and business plans with a one-time payment.
-          </p>
-          <p className="text-sm text-gray-400">
-            © 2025 TILKTIBEB. All rights reserved.
-          </p>
-        </div>
-      </section>
+      {/* The global Footer component will be shown here */}
     </div>
   );
 };

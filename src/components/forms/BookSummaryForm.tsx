@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { BookSummary } from '../../lib/supabase';
 import { createBookSummary, updateBookSummary } from '../../services/contentManagementService';
-import RichTextEditor from '../ui/rich-text-editor';
-import ImageUpload from '../ui/image-upload';
-// Import components
 
 interface BookSummaryFormProps {
   bookSummary?: BookSummary;
@@ -25,8 +22,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
       category: '',
       cover_image: '',
       read_time: '',
-      price: 0,
-      is_free: false
+      price: 0
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,7 +31,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
+    
     // Handle price as a number
     if (name === 'price') {
       setFormData({
@@ -48,7 +44,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
         [name]: value
       });
     }
-
+    
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -60,37 +56,37 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
-
+    
     if (!formData.author?.trim()) {
       newErrors.author = 'Author is required';
     }
-
+    
     if (!formData.category?.trim()) {
       newErrors.category = 'Category is required';
     }
-
-    if (!formData.is_free && (formData.price === undefined || formData.price <= 0)) {
-      newErrors.price = 'Price must be greater than zero for paid content';
+    
+    if (formData.price === undefined || formData.price < 0) {
+      newErrors.price = 'Price must be a positive number or zero';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
-
+    
     setIsSubmitting(true);
     setSuccessMessage('');
-
+    
     try {
       if (bookSummary?.id) {
         // Update existing book summary
@@ -153,13 +149,13 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           {successMessage}
         </div>
       )}
-
+      
       {errors.submit && (
         <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-4">
           {errors.submit}
         </div>
       )}
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label htmlFor="title" className="block text-sm font-medium text-gray-200">
@@ -175,7 +171,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           />
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
-
+        
         <div className="space-y-2">
           <label htmlFor="author" className="block text-sm font-medium text-gray-200">
             Author <span className="text-red-400">*</span>
@@ -190,7 +186,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           />
           {errors.author && <p className="text-red-400 text-xs mt-1">{errors.author}</p>}
         </div>
-
+        
         <div className="space-y-2">
           <label htmlFor="category" className="block text-sm font-medium text-gray-200">
             Category <span className="text-red-400">*</span>
@@ -209,7 +205,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           </select>
           {errors.category && <p className="text-red-400 text-xs mt-1">{errors.category}</p>}
         </div>
-
+        
         <div className="space-y-2">
           <label htmlFor="read_time" className="block text-sm font-medium text-gray-200">
             Read Time
@@ -227,78 +223,45 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
             ))}
           </select>
         </div>
-
-        {/* Pricing Options */}
-        <div className="space-y-4 md:col-span-2">
-          {/* Free/Paid Toggle */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-200">
-              Pricing Option <span className="text-red-400">*</span>
-            </label>
-            <div className="flex items-center space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="is_free"
-                  checked={formData.is_free === true}
-                  onChange={() => setFormData({ ...formData, is_free: true, price: 0 })}
-                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
-                />
-                <span className="ml-2 text-gray-200">Free</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="is_free"
-                  checked={formData.is_free === false}
-                  onChange={() => setFormData({ ...formData, is_free: false })}
-                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
-                />
-                <span className="ml-2 text-gray-200">Paid</span>
-              </label>
+        
+        <div className="space-y-2">
+          <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+            Price <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <span className="text-gray-400">$</span>
             </div>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              min="0"
+              step="0.01"
+              value={formData.price || 0}
+              onChange={handleChange}
+              className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
+            />
           </div>
-
-          {/* Price (only shown if paid option is selected) */}
-          {formData.is_free === false && (
-            <div className="space-y-2">
-              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-                Price <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="text-gray-400">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  min="0.01"
-                  step="0.01"
-                  value={formData.price || 0}
-                  onChange={handleChange}
-                  className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
-                />
-              </div>
-              {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
-            </div>
-          )}
+          {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
         </div>
-
-        {/* Enhanced ImageUpload component with file upload */}
-        <ImageUpload
-          currentImageUrl={formData.cover_image || null}
-          onImageChange={(imageUrl) => {
-            setFormData({
-              ...formData,
-              cover_image: imageUrl || ''
-            });
-          }}
-          label="Cover Image"
-          maxHeight={400} // Taller preview with scrolling
-        />
+        
+        <div className="space-y-2">
+          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
+            Cover Image URL
+          </label>
+          <input
+            type="text"
+            id="cover_image"
+            name="cover_image"
+            value={formData.cover_image || ''}
+            onChange={handleChange}
+            placeholder="https://example.com/image.jpg"
+            className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+          />
+        </div>
       </div>
-
+      
       <div className="space-y-2">
         <label htmlFor="description" className="block text-sm font-medium text-gray-200">
           Description
@@ -312,36 +275,21 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
           className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-
+      
       <div className="space-y-2">
         <label htmlFor="content" className="block text-sm font-medium text-gray-200">
           Content
         </label>
-        {/* Replace textarea with RichTextEditor */}
-        <RichTextEditor
+        <textarea
           id="content"
           name="content"
+          rows={8}
           value={formData.content || ''}
-          onChange={(content) => {
-            // Update the formData with the new content
-            setFormData({
-              ...formData,
-              content
-            });
-
-            // Clear error for this field if any
-            if (errors.content) {
-              setErrors({
-                ...errors,
-                content: ''
-              });
-            }
-          }}
-          error={errors.content}
-          height={400}
+          onChange={handleChange}
+          className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-
+      
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">
         <button
           type="button"

@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { BusinessPlan } from '../../lib/supabase';
 import { createBusinessPlan, updateBusinessPlan } from '../../services/contentManagementService';
-import RichTextEditor from '../ui/rich-text-editor';
-import ImageUpload from '../ui/image-upload';
-// Import components
 
 interface BusinessPlanFormProps {
   businessPlan?: BusinessPlan;
@@ -23,10 +20,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
       industry: '',
       cover_image: '',
       price: 0,
-      content: '',
-      author: 'Admin',
-      read_time: '15 min',
-      is_free: false
+      content: ''
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,7 +29,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
+    
     // Handle price as a number
     if (name === 'price') {
       setFormData({
@@ -48,7 +42,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
         [name]: value
       });
     }
-
+    
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -60,33 +54,33 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
-
+    
     if (!formData.industry?.trim()) {
       newErrors.industry = 'Industry is required';
     }
-
-    if (!formData.is_free && (formData.price === undefined || formData.price <= 0)) {
-      newErrors.price = 'Price must be greater than zero for paid content';
+    
+    if (formData.price === undefined || formData.price < 0) {
+      newErrors.price = 'Price must be a positive number or zero';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
-
+    
     setIsSubmitting(true);
     setSuccessMessage('');
-
+    
     try {
       if (businessPlan?.id) {
         // Update existing business plan
@@ -139,13 +133,13 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           {successMessage}
         </div>
       )}
-
+      
       {errors.submit && (
         <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-4">
           {errors.submit}
         </div>
       )}
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label htmlFor="title" className="block text-sm font-medium text-gray-200">
@@ -161,7 +155,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           />
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
-
+        
         <div className="space-y-2">
           <label htmlFor="industry" className="block text-sm font-medium text-gray-200">
             Industry <span className="text-red-400">*</span>
@@ -180,113 +174,45 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           </select>
           {errors.industry && <p className="text-red-400 text-xs mt-1">{errors.industry}</p>}
         </div>
-
+        
         <div className="space-y-2">
-          <label htmlFor="author" className="block text-sm font-medium text-gray-200">
-            Author
+          <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+            Price <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <span className="text-gray-400">$</span>
+            </div>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              min="0"
+              step="0.01"
+              value={formData.price || 0}
+              onChange={handleChange}
+              className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
+            />
+          </div>
+          {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
+            Cover Image URL
           </label>
           <input
             type="text"
-            id="author"
-            name="author"
-            value={formData.author || 'Admin'}
+            id="cover_image"
+            name="cover_image"
+            value={formData.cover_image || ''}
             onChange={handleChange}
+            placeholder="https://example.com/image.jpg"
             className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
           />
         </div>
-
-        <div className="space-y-2">
-          <label htmlFor="read_time" className="block text-sm font-medium text-gray-200">
-            Read Time
-          </label>
-          <select
-            id="read_time"
-            name="read_time"
-            value={formData.read_time || '15 min'}
-            onChange={handleChange}
-            className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
-          >
-            <option value="5 min">5 min</option>
-            <option value="10 min">10 min</option>
-            <option value="15 min">15 min</option>
-            <option value="20 min">20 min</option>
-            <option value="30 min">30 min</option>
-            <option value="45 min">45 min</option>
-            <option value="60 min">60 min</option>
-          </select>
-        </div>
-
-        {/* Pricing Options */}
-        <div className="space-y-4 md:col-span-2">
-          {/* Free/Paid Toggle */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-200">
-              Pricing Option <span className="text-red-400">*</span>
-            </label>
-            <div className="flex items-center space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="is_free"
-                  checked={formData.is_free === true}
-                  onChange={() => setFormData({ ...formData, is_free: true, price: 0 })}
-                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
-                />
-                <span className="ml-2 text-gray-200">Free</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="is_free"
-                  checked={formData.is_free === false}
-                  onChange={() => setFormData({ ...formData, is_free: false })}
-                  className="h-4 w-4 text-[#c9a52c] focus:ring-[#c9a52c] border-[#7a4528]/50 bg-[#2d1e14]"
-                />
-                <span className="ml-2 text-gray-200">Paid</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Price (only shown if paid option is selected) */}
-          {formData.is_free === false && (
-            <div className="space-y-2">
-              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-                Price <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="text-gray-400">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  min="0.01"
-                  step="0.01"
-                  value={formData.price || 0}
-                  onChange={handleChange}
-                  className={`w-full rounded-md bg-[#2d1e14] border ${errors.price ? 'border-red-500' : 'border-[#7a4528]/50'} pl-7 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
-                />
-              </div>
-              {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
-            </div>
-          )}
-        </div>
-
-        {/* Enhanced ImageUpload component with file upload */}
-        <ImageUpload
-          currentImageUrl={formData.cover_image || null}
-          onImageChange={(imageUrl) => {
-            setFormData({
-              ...formData,
-              cover_image: imageUrl || ''
-            });
-          }}
-          label="Cover Image"
-          maxHeight={400} // Taller preview with scrolling
-        />
       </div>
-
+      
       <div className="space-y-2">
         <label htmlFor="description" className="block text-sm font-medium text-gray-200">
           Description
@@ -300,39 +226,21 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-
+      
       <div className="space-y-2">
         <label htmlFor="content" className="block text-sm font-medium text-gray-200">
           Content
         </label>
-        {/* Replace textarea with RichTextEditor */}
-        <RichTextEditor
+        <textarea
           id="content"
           name="content"
+          rows={8}
           value={formData.content || ''}
-          onChange={(content) => {
-            // Update the formData with the new content
-            setFormData({
-              ...formData,
-              content
-            });
-
-            // Clear error for this field if any
-            if (errors.content) {
-              setErrors({
-                ...errors,
-                content: ''
-              });
-            }
-          }}
-          error={errors.content}
-          height={400}
+          onChange={handleChange}
+          className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
-        <p className="text-xs text-gray-400 mt-1">
-          Use the rich text editor to format your business plan content.
-        </p>
       </div>
-
+      
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">
         <button
           type="button"

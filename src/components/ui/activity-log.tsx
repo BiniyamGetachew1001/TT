@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActivityLog as ActivityLogType } from '../../lib/supabase';
-// import { getRecentActivityLogs } from '../../services/activityLogService';
+import { getRecentActivityLogs } from '../../services/activityLogService';
 import { Clock, FileText, Book, ShoppingCart, Plus, Edit, Trash2, Archive, Calendar, CheckCircle } from 'lucide-react';
 
 interface ActivityLogProps {
@@ -10,63 +10,36 @@ interface ActivityLogProps {
 
 /**
  * Activity Log component
- *
+ * 
  * Displays a list of recent activities in the system
  */
 const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' }) => {
-  // Mock activities for now until the database table is created
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [activities, setActivities] = useState<ActivityLogType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample mock data
-  const activities: ActivityLogType[] = [
-    {
-      id: '1',
-      user_email: 'admin@example.com',
-      action: 'create',
-      item_type: 'blog-post',
-      item_id: '123',
-      item_title: 'Getting Started with React',
-      created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() // 5 minutes ago
-    },
-    {
-      id: '2',
-      user_email: 'admin@example.com',
-      action: 'update',
-      item_type: 'book-summary',
-      item_id: '456',
-      item_title: 'The Lean Startup',
-      created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 minutes ago
-    },
-    {
-      id: '3',
-      user_email: 'admin@example.com',
-      action: 'delete',
-      item_type: 'business-plan',
-      item_id: '789',
-      item_title: 'Coffee Shop Business Plan',
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
-    },
-    {
-      id: '4',
-      user_email: 'admin@example.com',
-      action: 'publish',
-      item_type: 'blog-post',
-      item_id: '101',
-      item_title: 'Top 10 Marketing Strategies',
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
-    },
-    {
-      id: '5',
-      user_email: 'admin@example.com',
-      action: 'schedule',
-      item_type: 'blog-post',
-      item_id: '102',
-      item_title: 'Future of AI in Business',
-      details: 'Scheduled for tomorrow at 9:00 AM',
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
-    }
-  ].slice(0, limit);
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const result = await getRecentActivityLogs(limit);
+        
+        if (result.success) {
+          setActivities(result.data);
+        } else {
+          setError(result.message || 'Failed to fetch activity logs');
+        }
+      } catch (err: any) {
+        setError(err.message || 'An error occurred while fetching activities');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchActivities();
+  }, [limit]);
 
   // Helper function to get icon for item type
   const getItemTypeIcon = (itemType: ActivityLogType['item_type']) => {
@@ -109,7 +82,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
     const { action, item_type, item_title, user_email } = activity;
     const itemTypeFormatted = item_type.replace('-', ' ');
     const userDisplay = user_email || 'A user';
-
+    
     switch (action) {
       case 'create':
         return (
@@ -168,26 +141,26 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
+    
     if (diffInSeconds < 60) {
       return 'just now';
     }
-
+    
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) {
       return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
     }
-
+    
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
       return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
     }
-
+    
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 30) {
       return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
     }
-
+    
     // For older dates, just show the actual date
     return date.toLocaleDateString();
   };
@@ -197,7 +170,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
       <h3 className="text-lg font-medium mb-4 flex items-center">
         <Clock size={18} className="mr-2 text-[#c9a52c]" /> Recent Activity
       </h3>
-
+      
       {loading ? (
         <div className="flex justify-center py-6">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#c9a52c]"></div>

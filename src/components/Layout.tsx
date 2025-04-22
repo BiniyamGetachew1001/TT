@@ -132,7 +132,34 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
         </nav>
 
-        {/* Bottom navigation items removed */}
+        {/* Bottom navigation items */}
+        <div className="p-3 mt-auto bottom-border pt-4">
+          <div className="flex flex-col gap-2">
+            <Link to="/settings" className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}>
+              <Settings size={20} />
+              <span>Settings</span>
+            </Link>
+            <button
+              onClick={toggleDarkMode}
+              className="sidebar-item text-left"
+            >
+              <Moon size={20} />
+              <span>Dark Mode: {darkMode ? 'On' : 'Off'}</span>
+            </button>
+            {user && (
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = '/';
+                }}
+                className="sidebar-item text-left"
+              >
+                <LogOut size={20} />
+                <span>Log Out</span>
+              </button>
+            )}
+          </div>
+        </div>
       </aside>
 
       {/* Main content */}
