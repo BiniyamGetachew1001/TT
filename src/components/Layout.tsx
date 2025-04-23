@@ -4,8 +4,9 @@ import { Book, Bookmark, CreditCard, Download, House, LayoutGrid, LogOut, Menu, 
 import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 import Footer from './Footer';
+import NetworkStatus from './ui/NetworkStatus';
+import { supabase } from '../lib/supabase';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,7 +17,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { bookmarks } = useBookmarks();
   const { user, isAdmin, logout } = useAuth();
-  const { darkMode, toggleDarkMode } = useTheme();
   const bookmarkCount = bookmarks.length;
 
   useEffect(() => {
@@ -130,22 +130,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <CreditCard size={20} />
             <span>Pricing</span>
           </Link>
+          <Link to="/settings" className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}>
+            <Settings size={20} />
+            <span>Settings</span>
+          </Link>
+
         </nav>
 
-        {/* Bottom navigation items */}
-        <div className="p-3 mt-auto bottom-border pt-4">
+        <div className="p-3 mt-auto">
           <div className="flex flex-col gap-2">
-            <Link to="/settings" className={`sidebar-item ${isActive('/settings') ? 'active' : ''}`}>
-              <Settings size={20} />
-              <span>Settings</span>
-            </Link>
-            <button
-              onClick={toggleDarkMode}
-              className="sidebar-item text-left"
-            >
+            <Link to="#" className="sidebar-item">
               <Moon size={20} />
-              <span>Dark Mode: {darkMode ? 'On' : 'Off'}</span>
-            </button>
+              <span>Dark Mode</span>
+            </Link>
             {user && (
               <button
                 onClick={async () => {
@@ -170,6 +167,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <Footer />
         </div>
+
+        {/* Network Status Indicator */}
+        <NetworkStatus supabaseUrl="https://ygamcvlfdxawhirwugcd.supabase.co" />
       </div>
     </div>
   );

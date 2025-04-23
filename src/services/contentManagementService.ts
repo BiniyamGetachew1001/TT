@@ -4,6 +4,8 @@ import type { BookSummary, BusinessPlan, BlogPost } from '../lib/supabase';
 // Book Summaries Management
 export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    // Activity logging functionality is currently disabled.
+    // Uncomment the following lines once the activity log table is created.
     const { data, error } = await supabase
       .from('book_summaries')
       .insert([{

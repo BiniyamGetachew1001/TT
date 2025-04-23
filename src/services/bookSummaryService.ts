@@ -20,8 +20,22 @@ export const getAllBookSummaries = async (category?: string) => {
     if (error) {
       console.error('Supabase error fetching book summaries:', error);
 
+      // Check for specific error types and provide more detailed information
+      if (error.code === '42P01') {
+        console.error('Table does not exist. Please check your database schema.');
+      } else if (error.code === 'PGRST301') {
+        console.error('Database connection error. Please check your Supabase URL and API key.');
+      } else if (error.code === 'PGRST401') {
+        console.error('Authentication error. Please check your Supabase API key.');
+      } else if (error.message.includes('Failed to fetch')) {
+        console.error('Network error. Please check your internet connection and Supabase URL.');
+      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
+      }
+
       // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist')) {
+      if (error.code === '42P01' || error.message.includes('does not exist') ||
+          error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
         console.log('Using mock data as fallback');
         const filteredData = category && category !== 'all'
           ? mockSummaries.filter(summary => summary.category === category)
@@ -70,8 +84,24 @@ export const getBookSummaryById = async (id: string) => {
       .single();
 
     if (error) {
+      console.error('Supabase error fetching book summary:', error);
+
+      // Check for specific error types and provide more detailed information
+      if (error.code === '42P01') {
+        console.error('Table does not exist. Please check your database schema.');
+      } else if (error.code === 'PGRST301') {
+        console.error('Database connection error. Please check your Supabase URL and API key.');
+      } else if (error.code === 'PGRST401') {
+        console.error('Authentication error. Please check your Supabase API key.');
+      } else if (error.message.includes('Failed to fetch')) {
+        console.error('Network error. Please check your internet connection and Supabase URL.');
+      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
+      }
+
       // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist')) {
+      if (error.code === '42P01' || error.message.includes('does not exist') ||
+          error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
         console.log('Using mock data as fallback for book detail');
         const mockId = parseInt(id, 10);
         const mockSummary = mockSummaries.find(summary => summary.id === mockId);

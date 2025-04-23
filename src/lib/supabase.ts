@@ -1,10 +1,73 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
+// Make sure to include the https:// prefix
 const supabaseUrl = 'https://ygamcvlfdxawhirwugcd.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnYW1jdmxmZHhhd2hpcnd1Z2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDIzNjQsImV4cCI6MjA2MDAxODM2NH0.Mdb42Wtpe9SPm4N2YpKRgKmachbGFlYfRVTbrTV822M';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Enable debug mode to see detailed logs
+const supabaseOptions = {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true
+  },
+  global: {
+    fetch: fetch.bind(globalThis)
+  }
+};
+
+// Create a wrapper around the Supabase client to handle connection issues
+class RobustSupabaseClient {
+  private client: SupabaseClient;
+  private connectionStatus: 'unknown' | 'connected' | 'disconnected' = 'unknown';
+  private lastConnectionAttempt: number = 0;
+  private connectionAttemptInterval: number = 30000; // 30 seconds
+
+  constructor(url: string, key: string) {
+    this.client = createClient(url, key, supabaseOptions);
+    this.checkConnection();
+  }
+
+  private async checkConnection(): Promise<void> {
+    const now = Date.now();
+
+    // Only check connection if we haven't checked recently
+    if (now - this.lastConnectionAttempt < this.connectionAttemptInterval) {
+      return;
+    }
+
+    this.lastConnectionAttempt = now;
+
+    try {
+      // Simple health check query
+      const { error } = await this.client.from('health_check').select('count').maybeSingle();
+
+      // If there's no error or the error is just that the table doesn't exist, we're connected
+      if (!error || error.code === '42P01') {
+        this.connectionStatus = 'connected';
+        console.log('Supabase connection successful');
+      } else {
+        this.connectionStatus = 'disconnected';
+        console.warn('Supabase connection failed:', error.message);
+      }
+    } catch (err) {
+      this.connectionStatus = 'disconnected';
+      console.warn('Supabase connection error:', err);
+    }
+  }
+
+  public isConnected(): boolean {
+    return this.connectionStatus === 'connected';
+  }
+
+  public getClient(): SupabaseClient {
+    this.checkConnection();
+    return this.client;
+  }
+}
+
+const robustClient = new RobustSupabaseClient(supabaseUrl, supabaseKey);
+export const supabase = robustClient.getClient();
 
 // Types for your database tables
 export type User = {

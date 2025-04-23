@@ -22,7 +22,10 @@ const ContentManagementPage: React.FC = () => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [bookSearchTerm, setBookSearchTerm] = useState('');
+  const [businessSearchTerm, setBusinessSearchTerm] = useState('');
+  const [blogSearchTerm, setBlogSearchTerm] = useState('');
+  const [purchaseSearchTerm, setPurchaseSearchTerm] = useState('');
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -166,29 +169,29 @@ const ContentManagementPage: React.FC = () => {
   };
 
   // Filter functions
-  const filteredBookSummaries = searchTerm
+  const filteredBookSummaries = bookSearchTerm
     ? bookSummaries.filter(book =>
-        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.category.toLowerCase().includes(searchTerm.toLowerCase())
+        book.title.toLowerCase().includes(bookSearchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(bookSearchTerm.toLowerCase()) ||
+        book.category.toLowerCase().includes(bookSearchTerm.toLowerCase())
       )
     : bookSummaries;
 
-  const filteredBusinessPlans = searchTerm
+  const filteredBusinessPlans = businessSearchTerm
     ? businessPlans.filter(plan =>
-        plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.industry.toLowerCase().includes(searchTerm.toLowerCase())
+        plan.title.toLowerCase().includes(businessSearchTerm.toLowerCase()) ||
+        plan.industry.toLowerCase().includes(businessSearchTerm.toLowerCase())
       )
     : businessPlans;
 
-  const filteredBlogPosts = searchTerm
+  const filteredBlogPosts = blogSearchTerm
     ? blogPosts.filter(post =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.category.toLowerCase().includes(searchTerm.toLowerCase())
+        post.title.toLowerCase().includes(blogSearchTerm.toLowerCase()) ||
+        post.category.toLowerCase().includes(blogSearchTerm.toLowerCase())
       )
     : blogPosts;
 
-  const filteredPurchases = searchTerm
+  const filteredPurchases = purchaseSearchTerm
     ? purchases.filter(purchase => {
         const userEmail = purchase.user?.email || '';
         const userName = purchase.user?.name || '';
@@ -204,12 +207,12 @@ const ContentManagementPage: React.FC = () => {
           itemTitle = purchase.business_plan.title || '';
         }
 
-        return userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          itemType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          itemTitle.toLowerCase().includes(searchTerm.toLowerCase());
+        return userEmail.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+          userName.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+          itemType.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+          status.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+          paymentId.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+          itemTitle.toLowerCase().includes(purchaseSearchTerm.toLowerCase());
       })
     : purchases;
 
@@ -261,51 +264,6 @@ const ContentManagementPage: React.FC = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-2xl md:text-3xl font-bold">Content Management</h1>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search size={16} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <div className="relative group">
-                <button className="gold-button flex items-center">
-                  <Plus size={16} className="mr-1" /> Add New Content
-                </button>
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#2d1e14] ring-1 ring-black ring-opacity-5 invisible group-hover:visible z-10">
-                  <div className="py-1" role="menu" aria-orientation="vertical">
-                    <button
-                      onClick={() => handleOpenModal('book')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <Book size={16} className="mr-2" /> Book Summary
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal('business')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <FileText size={16} className="mr-2" /> Business Plan
-                    </button>
-                    <button
-                      onClick={() => handleOpenModal('blog')}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#3a2819] transition-colors flex items-center"
-                    >
-                      <Newspaper size={16} className="mr-2" /> Blog Post
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <Tabs defaultValue="book-summaries" className="w-full">
@@ -325,6 +283,28 @@ const ContentManagementPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="book-summaries">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+              <div className="relative w-full sm:w-64">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search book summaries..."
+                  value={bookSearchTerm}
+                  onChange={(e) => setBookSearchTerm(e.target.value)}
+                  className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                />
+              </div>
+
+              <button
+                onClick={() => handleOpenModal('book')}
+                className="gold-button flex items-center whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-1" /> Add Book Summary
+              </button>
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#c9a52c]"></div>
@@ -393,10 +373,10 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                           </tr>
                         ))
-                      ) : searchTerm ? (
+                      ) : bookSearchTerm ? (
                         <tr>
                           <td colSpan={5} className="p-6 text-center text-gray-400">
-                            No results found for "{searchTerm}"
+                            No results found for "{bookSearchTerm}"
                           </td>
                         </tr>
                       ) : (
@@ -414,6 +394,28 @@ const ContentManagementPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="business-plans">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+              <div className="relative w-full sm:w-64">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search business plans..."
+                  value={businessSearchTerm}
+                  onChange={(e) => setBusinessSearchTerm(e.target.value)}
+                  className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                />
+              </div>
+
+              <button
+                onClick={() => handleOpenModal('business')}
+                className="gold-button flex items-center whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-1" /> Add Business Plan
+              </button>
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#c9a52c]"></div>
@@ -482,10 +484,10 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                           </tr>
                         ))
-                      ) : searchTerm ? (
+                      ) : businessSearchTerm ? (
                         <tr>
                           <td colSpan={5} className="p-6 text-center text-gray-400">
-                            No results found for "{searchTerm}"
+                            No results found for "{businessSearchTerm}"
                           </td>
                         </tr>
                       ) : (
@@ -503,6 +505,28 @@ const ContentManagementPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="blog-posts">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+              <div className="relative w-full sm:w-64">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search blog posts..."
+                  value={blogSearchTerm}
+                  onChange={(e) => setBlogSearchTerm(e.target.value)}
+                  className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                />
+              </div>
+
+              <button
+                onClick={() => handleOpenModal('blog')}
+                className="gold-button flex items-center whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-1" /> Add Blog Post
+              </button>
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#c9a52c]"></div>
@@ -565,10 +589,10 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                           </tr>
                         ))
-                      ) : searchTerm ? (
+                      ) : blogSearchTerm ? (
                         <tr>
                           <td colSpan={5} className="p-6 text-center text-gray-400">
-                            No results found for "{searchTerm}"
+                            No results found for "{blogSearchTerm}"
                           </td>
                         </tr>
                       ) : (
@@ -586,6 +610,21 @@ const ContentManagementPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="purchases">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+              <div className="relative w-full sm:w-64">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search purchases..."
+                  value={purchaseSearchTerm}
+                  onChange={(e) => setPurchaseSearchTerm(e.target.value)}
+                  className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                />
+              </div>
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#c9a52c]"></div>
