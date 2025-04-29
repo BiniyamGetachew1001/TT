@@ -1,5 +1,22 @@
-import { supabase } from '../lib/supabase';
-import type { BookSummary } from '../lib/supabase';
+import { mockSummaries } from '../data/mockData';
+
+// Define BookSummary type locally since we removed the Supabase import
+export type BookSummary = {
+  id: string | number;
+  title: string;
+  author: string;
+  description?: string;
+  content?: string;
+  cover_image?: string;
+  coverImage?: string; // For compatibility with mock data
+  read_time?: string;
+  readTime?: string; // For compatibility with mock data
+  category?: string;
+  price?: number;
+  isPremium?: boolean; // For compatibility with mock data
+  created_at?: string;
+  updated_at?: string;
+};
 
 // Get the current user from localStorage
 const getCurrentUser = () => {
@@ -17,48 +34,84 @@ const getCurrentUser = () => {
 
 export const getAllBookSummaries = async (category?: string) => {
   try {
-    const currentUser = getCurrentUser();
-
-    // Use Supabase to fetch book summaries
-    let query = supabase
-      .from('book_summaries')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    // Add category filter if provided
-    if (category && category !== 'all') {
-      query = query.eq('category', category);
-    }
-
-    // Admin page filtering is handled by RLS policies
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Supabase error fetching book summaries:', error);
-
-      // Check for specific error types and provide more detailed information
-      if (error.code === '42P01') {
-        console.error('Table does not exist. Please check your database schema.');
-      } else if (error.code === 'PGRST301') {
-        console.error('Database connection error. Please check your Supabase URL and API key.');
-      } else if (error.code === 'PGRST401') {
-        console.error('Authentication error. Please check your Supabase API key.');
-      } else if (error.message.includes('Failed to fetch')) {
-        console.error('Network error. Please check your internet connection and Supabase URL.');
-      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
+    // Check if browser is offline
+    if (!navigator.onLine) {
+      console.warn('Browser is offline, returning cached data for book summaries');
+      // Return cached data from localStorage
+      const cachedData = localStorage.getItem('cached_book_summaries');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        // Apply category filter if needed
+        const filtered = category && category !== 'all'
+          ? parsed.filter((item: any) => item.category === category)
+          : parsed;
+        return {
+          success: true,
+          data: filtered,
+          offline: true
+        };
       }
-
-      throw error;
+      // If no cached data, return empty array
+      return {
+        success: true,
+        data: [],
+        offline: true,
+        message: 'No cached data available while offline'
+      };
     }
 
+    console.log('Using mock data for book summaries');
+    
+    // Convert mock data to match the expected format
+    const formattedData = mockSummaries.map(summary => ({
+      id: summary.id.toString(),
+      title: summary.title,
+      author: summary.author,
+      description: summary.description,
+      content: summary.content,
+      cover_image: summary.coverImage,
+      read_time: summary.readTime,
+      category: summary.category,
+      price: summary.isPremium ? 9.99 : 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    
+    // Apply category filter if provided
+    const filteredData = category && category !== 'all'
+      ? formattedData.filter(item => item.category === category)
+      : formattedData;
+    
+    // Cache the data for offline use
+    localStorage.setItem('cached_book_summaries', JSON.stringify(filteredData));
+    
     return {
       success: true,
-      data: data || []
+      data: filteredData
     };
   } catch (error: any) {
-    console.error('Error fetching book summaries:', error);
+    console.error('Error fetching mock book summaries:', error);
+    
+    // Try to use cached data as a last resort
+    try {
+      const cachedData = localStorage.getItem('cached_book_summaries');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        // Apply category filter if needed
+        const filtered = category && category !== 'all'
+          ? parsed.filter((item: any) => item.category === category)
+          : parsed;
+        return {
+          success: true,
+          data: filtered,
+          offline: true,
+          message: 'Using cached data due to connection error'
+        };
+      }
+    } catch (cacheError) {
+      console.error('Error reading cached data:', cacheError);
+    }
+    
     return {
       success: false,
       message: error.message || 'Failed to fetch book summaries',
@@ -69,41 +122,103 @@ export const getAllBookSummaries = async (category?: string) => {
 
 export const getBookSummaryById = async (id: string) => {
   try {
-    const currentUser = getCurrentUser();
-    let query = supabase
-      .from('book_summaries')
-      .select('*')
-      .eq('id', id);
-
-    // Admin page filtering is handled by RLS policies
-
-    const { data, error } = await query.single();
-
-    if (error) {
-      console.error('Supabase error fetching book summary:', error);
-
-      // Check for specific error types and provide more detailed information
-      if (error.code === '42P01') {
-        console.error('Table does not exist. Please check your database schema.');
-      } else if (error.code === 'PGRST301') {
-        console.error('Database connection error. Please check your Supabase URL and API key.');
-      } else if (error.code === 'PGRST401') {
-        console.error('Authentication error. Please check your Supabase API key.');
-      } else if (error.message.includes('Failed to fetch')) {
-        console.error('Network error. Please check your internet connection and Supabase URL.');
-      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
+    // Check if browser is offline
+    if (!navigator.onLine) {
+      console.warn('Browser is offline, trying to retrieve book summary from cache');
+      // Try to get the book summary from cached data
+      const cachedData = localStorage.getItem('cached_book_summaries');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const bookSummary = parsed.find((item: any) => item.id === id);
+        if (bookSummary) {
+          return {
+            success: true,
+            data: bookSummary,
+            offline: true
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Book summary not found in cache',
+            data: null,
+            offline: true
+          };
+        }
       }
-
-      throw error;
+      return {
+        success: false,
+        message: 'No cached data available while offline',
+        data: null,
+        offline: true
+      };
     }
 
+    console.log('Using mock data for book summary by ID:', id);
+    
+    // Find the book summary in mock data
+    const summary = mockSummaries.find(summary => summary.id.toString() === id);
+    
+    if (!summary) {
+      throw new Error('Book summary not found');
+    }
+    
+    // Convert to expected format
+    const formattedData = {
+      id: summary.id.toString(),
+      title: summary.title,
+      author: summary.author,
+      description: summary.description,
+      content: summary.content,
+      cover_image: summary.coverImage,
+      read_time: summary.readTime,
+      category: summary.category,
+      price: summary.isPremium ? 9.99 : 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Cache this individual book summary for offline access
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      const index = parsed.findIndex((item: any) => item.id === id);
+      if (index >= 0) {
+        parsed[index] = formattedData;
+      } else {
+        parsed.push(formattedData);
+      }
+      localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
+    } else {
+      // Create a new cache with just this book summary
+      localStorage.setItem('cached_book_summaries', JSON.stringify([formattedData]));
+    }
+    
     return {
       success: true,
-      data
+      data: formattedData
     };
   } catch (error: any) {
-    console.error('Error fetching book summary:', error);
+    console.error('Error fetching mock book summary:', error);
+    
+    // Try to use cached data as a last resort
+    try {
+      const cachedData = localStorage.getItem('cached_book_summaries');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const bookSummary = parsed.find((item: any) => item.id === id);
+        if (bookSummary) {
+          return {
+            success: true,
+            data: bookSummary,
+            offline: true,
+            message: 'Using cached data due to connection error'
+          };
+        }
+      }
+    } catch (cacheError) {
+      console.error('Error reading cached data:', cacheError);
+    }
+    
     return {
       success: false,
       message: error.message || 'Failed to fetch book summary',
@@ -116,54 +231,51 @@ export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'c
   try {
     const currentUser = getCurrentUser();
     if (!currentUser) {
+      console.error('Authentication required: No user found in localStorage');
       return {
         success: false,
-        message: 'User not authenticated',
+        message: 'Authentication required. Please log in first.',
         data: null
       };
     }
 
-    // Handle cover image upload if it's a data URL
+    console.log('Creating mock book summary with user:', currentUser.email, 'Role:', currentUser.role);
+
+    // Generate a mock ID (timestamp-based for uniqueness)
+    const mockId = Date.now().toString();
+    
+    // Use the provided cover image or a default one
     let coverImage = bookSummary.cover_image;
-    if (coverImage && coverImage.startsWith('data:')) {
-      const fileName = `${Date.now()}-${bookSummary.title.replace(/\s+/g, '-').toLowerCase()}.jpg`;
-      const { data, error } = await supabase.storage
-        .from('book-covers')
-        .upload(fileName, coverImage, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      // Get the public URL for the uploaded image
-      const { data: urlData } = supabase.storage
-        .from('book-covers')
-        .getPublicUrl(fileName);
-
-      coverImage = urlData.publicUrl;
+    if (!coverImage) {
+      coverImage = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=300&auto=format&fit=crop";
     }
-
-    const { data, error } = await supabase
-      .from('book_summaries')
-      .insert([{
-        ...bookSummary,
-        cover_image: coverImage,
-
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
+    
+    // Create the new book summary with mock data
+    const newBookSummary = {
+      id: mockId,
+      ...bookSummary,
+      cover_image: coverImage,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Add to localStorage cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      parsed.push(newBookSummary);
+      localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
+    } else {
+      localStorage.setItem('cached_book_summaries', JSON.stringify([newBookSummary]));
+    }
+    
+    console.log('Mock book summary created successfully:', newBookSummary);
     return {
       success: true,
-      data
+      data: newBookSummary
     };
   } catch (error: any) {
-    console.error('Error creating book summary:', error);
+    console.error('Error creating mock book summary:', error);
     return {
       success: false,
       message: error.message || 'Failed to create book summary',
@@ -176,54 +288,59 @@ export const updateBookSummary = async (id: string, bookSummary: Partial<BookSum
   try {
     const currentUser = getCurrentUser();
     if (!currentUser) {
+      console.error('Authentication required: No user found in localStorage');
       return {
         success: false,
-        message: 'User not authenticated',
+        message: 'Authentication required. Please log in first.',
         data: null
       };
     }
 
-    // Handle cover image upload if it's a data URL
+    console.log('Updating mock book summary with user:', currentUser.email, 'Role:', currentUser.role);
+
+    // Use the provided cover image or keep the existing one
     let coverImage = bookSummary.cover_image;
-    if (coverImage && coverImage.startsWith('data:')) {
-      const fileName = `${Date.now()}-${bookSummary.title?.replace(/\s+/g, '-').toLowerCase() || id}.jpg`;
-      const { data, error } = await supabase.storage
-        .from('book-covers')
-        .upload(fileName, coverImage, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      // Get the public URL for the uploaded image
-      const { data: urlData } = supabase.storage
-        .from('book-covers')
-        .getPublicUrl(fileName);
-
-      coverImage = urlData.publicUrl;
+    
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Book summary not found in cache',
+        data: null
+      };
     }
-
-    const { data, error } = await supabase
-      .from('book_summaries')
-      .update({
-        ...bookSummary,
-        cover_image: coverImage,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-
-      .select()
-      .single();
-
-    if (error) throw error;
-
+    
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+    
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Book summary not found',
+        data: null
+      };
+    }
+    
+    // Update the book summary
+    const updatedSummary = {
+      ...parsed[index],
+      ...bookSummary,
+      cover_image: coverImage || parsed[index].cover_image,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Update in cache
+    parsed[index] = updatedSummary;
+    localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
+    
+    console.log('Mock book summary updated successfully:', updatedSummary);
     return {
       success: true,
-      data
+      data: updatedSummary
     };
   } catch (error: any) {
-    console.error('Error updating book summary:', error);
+    console.error('Error updating mock book summary:', error);
     return {
       success: false,
       message: error.message || 'Failed to update book summary',
@@ -236,25 +353,44 @@ export const deleteBookSummary = async (id: string) => {
   try {
     const currentUser = getCurrentUser();
     if (!currentUser) {
+      console.error('Authentication required: No user found in localStorage');
       return {
         success: false,
-        message: 'User not authenticated'
+        message: 'Authentication required. Please log in first.'
       };
     }
 
-    const { error } = await supabase
-      .from('book_summaries')
-      .delete()
-      .eq('id', id)
+    console.log('Deleting mock book summary with user:', currentUser.email, 'Role:', currentUser.role);
 
-
-    if (error) throw error;
-
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Book summary not found in cache'
+      };
+    }
+    
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+    
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Book summary not found'
+      };
+    }
+    
+    // Remove from cache
+    parsed.splice(index, 1);
+    localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
+    
+    console.log('Mock book summary deleted successfully');
     return {
       success: true
     };
   } catch (error: any) {
-    console.error('Error deleting book summary:', error);
+    console.error('Error deleting mock book summary:', error);
     return {
       success: false,
       message: error.message || 'Failed to delete book summary'

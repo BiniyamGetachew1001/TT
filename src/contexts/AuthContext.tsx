@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -37,47 +36,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check active session
-    const checkSession = async () => {
+    // Check if we have a stored user session in localStorage
+    const checkSession = () => {
       try {
-        // Check if we have a stored admin session in localStorage
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
-            setIsLoading(false);
-            return;
           } catch (e) {
             // Invalid JSON, clear it
             localStorage.removeItem('user');
           }
-        }
-
-        // Regular Supabase session check
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error('Error checking session:', error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (session) {
-          // Get user profile data
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id, email, name, role')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError) {
-            console.error('Error fetching user data:', userError);
-            setIsLoading(false);
-            return;
-          }
-
-          setUser(userData);
         }
       } catch (err) {
         console.error('Session check error:', err);
@@ -87,45 +57,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkSession();
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          // Get user profile data
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id, email, name, role')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError) {
-            console.error('Error fetching user data:', userError);
-            return;
-          }
-
-          setUser(userData);
-        } else if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('user');
-          setUser(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      // For testing purposes, allow a specific email to bypass authentication
-      if (email === 'biniyam.getachew@aastustudent.edu.et') {
+      // Simple mock authentication
+      // Admin user check
+      if (email.includes('admin') || email === 'biniyam.getachew@aastustudent.edu.et') {
         // Create a mock admin user with a valid UUID
         const mockAdminUser = {
           id: '00000000-0000-0000-0000-000000000000', // Valid UUID format
           email: email,
-          name: 'Biniyam Getachew',
+          name: email.split('@')[0],
           role: 'admin'
         };
 
@@ -134,43 +77,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(mockAdminUser);
         return { success: true };
       }
+      // Regular user
+      else if (email && password) {
+        // Create a mock regular user
+        const mockUser = {
+          id: '11111111-1111-1111-1111-111111111111', // Valid UUID format
+          email: email,
+          name: email.split('@')[0],
+          role: 'user'
+        };
 
-      // Regular authentication flow for other users
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        return { success: false, message: error.message };
+        // Store the user data in localStorage for persistence
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        return { success: true };
       }
 
-      if (!data.user) {
-        return { success: false, message: 'Login failed' };
-      }
-
-      // Get user profile data
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, email, name, role')
-        .eq('id', data.user.id)
-        .single();
-
-      if (userError) {
-        return { success: false, message: 'Failed to fetch user data' };
-      }
-
-      // Store the user data in localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      return { success: true };
+      return { success: false, message: 'Invalid email or password' };
     } catch (err: any) {
       return { success: false, message: err.message || 'An error occurred during login' };
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
     localStorage.removeItem('user');
     setUser(null);
   };

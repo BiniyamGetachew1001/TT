@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { BookSummary } from '../../lib/supabase';
+import { BookSummary } from '../../services/BookSummaryService';
 import { createBookSummary, updateBookSummary } from '../../services/contentManagementService';
+import RichTextEditor from '../ui/RichTextEditor';
 
 interface BookSummaryFormProps {
   bookSummary?: BookSummary;
@@ -90,7 +91,7 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
     try {
       if (bookSummary?.id) {
         // Update existing book summary
-        const result = await updateBookSummary(bookSummary.id, formData);
+        const result = await updateBookSummary(String(bookSummary.id), formData);
         if (result.success) {
           setSuccessMessage('Book summary updated successfully!');
           setTimeout(() => {
@@ -266,13 +267,11 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
         <label htmlFor="description" className="block text-sm font-medium text-white">
           Description
         </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={3}
-          value={formData.description || ''}
-          onChange={handleChange}
-          className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+        <RichTextEditor
+          initialValue={formData.description || ''}
+          onChange={(value) => setFormData({ ...formData, description: value })}
+          minHeight="150px"
+          placeholder="Enter a brief description of the book summary..."
         />
       </div>
 
@@ -280,14 +279,15 @@ const BookSummaryForm: React.FC<BookSummaryFormProps> = ({
         <label htmlFor="content" className="block text-sm font-medium text-white">
           Content
         </label>
-        <textarea
-          id="content"
-          name="content"
-          rows={8}
-          value={formData.content || ''}
-          onChange={handleChange}
-          className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+        <RichTextEditor
+          initialValue={formData.content || ''}
+          onChange={(value) => setFormData({ ...formData, content: value })}
+          minHeight="300px"
+          placeholder="Enter the book summary content here..."
         />
+        <p className="text-xs text-gray-400 mt-1">
+          Markdown formatting is supported
+        </p>
       </div>
 
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">

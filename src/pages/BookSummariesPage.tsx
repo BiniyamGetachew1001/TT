@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, Lock } from 'lucide-react';
 import { getUserReadingProgress } from '../services/bookSummaryService';
-import { getAllBookSummaries } from '../services/bookSummaryService';
+import { getAllBookSummaries, BookSummary } from '../services/bookSummaryService';
 import { useBookmarks } from '../contexts/BookmarkContext';
-import { BookSummary } from '../lib/supabase';
+import OfflineDataIndicator from '../components/ui/OfflineDataIndicator';
+import useOfflineStatus from '../hooks/useOfflineStatus';
 
 const BookSummariesPage: React.FC = () => {
   const [summaries, setSummaries] = useState<BookSummary[]>([]);
@@ -12,6 +13,9 @@ const BookSummariesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [isOfflineData, setIsOfflineData] = useState(false);
+
+  const { isOffline } = useOfflineStatus();
 
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarks();
 
@@ -23,6 +27,9 @@ const BookSummariesPage: React.FC = () => {
         const result = await getAllBookSummaries(categoryFilter);
 
         if (result.success) {
+          // Check if the data is from offline cache
+          setIsOfflineData(result.offline === true);
+
           let sortedData = [...result.data];
 
           // Apply sorting
@@ -123,6 +130,13 @@ const BookSummariesPage: React.FC = () => {
         {error && (
           <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-6">
             {error}
+          </div>
+        )}
+
+        {/* Show offline data indicator when displaying cached data */}
+        {isOfflineData && (
+          <div className="mb-6">
+            <OfflineDataIndicator />
           </div>
         )}
 

@@ -1,5 +1,7 @@
-import { supabase } from '../lib/supabase';
-import type { BookSummary, BusinessPlan, BlogPost } from '../lib/supabase';
+import { BookSummary } from './BookSummaryService';
+import { BusinessPlan } from './businessPlanService';
+import { BlogPost } from './blogService';
+import { mockSummaries, mockBlogPosts, mockBusinessPlans } from '../data/mockData';
 
 // Get the current user from localStorage
 const getCurrentUser = () => {
@@ -26,22 +28,28 @@ export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'c
       };
     }
 
-    // Activity logging functionality is currently disabled.
-    // Uncomment the following lines once the activity log table is created.
-    const { data, error } = await supabase
-      .from('book_summaries')
-      .insert([{
-        ...bookSummary,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select();
+    // Create a mock book summary with a unique ID
+    const mockId = Date.now().toString();
+    const newBookSummary = {
+      id: mockId,
+      ...bookSummary,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    if (error) throw error;
+    // Add to localStorage cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      parsed.push(newBookSummary);
+      localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
+    } else {
+      localStorage.setItem('cached_book_summaries', JSON.stringify([newBookSummary]));
+    }
 
     return {
       success: true,
-      data: data[0]
+      data: newBookSummary
     };
   } catch (error: any) {
     console.error('Error creating book summary:', error);
@@ -62,20 +70,39 @@ export const updateBookSummary = async (id: string, updates: Partial<BookSummary
       };
     }
 
-    const { data, error } = await supabase
-      .from('book_summaries')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select();
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Book summary not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Book summary not found'
+      };
+    }
+
+    // Update the book summary
+    const updatedSummary = {
+      ...parsed[index],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    // Update in cache
+    parsed[index] = updatedSummary;
+    localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
 
     return {
       success: true,
-      data: data[0]
+      data: updatedSummary
     };
   } catch (error: any) {
     console.error('Error updating book summary:', error);
@@ -96,12 +123,28 @@ export const deleteBookSummary = async (id: string) => {
       };
     }
 
-    const { error } = await supabase
-      .from('book_summaries')
-      .delete()
-      .eq('id', id);
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_book_summaries');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Book summary not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Book summary not found'
+      };
+    }
+
+    // Remove from cache
+    parsed.splice(index, 1);
+    localStorage.setItem('cached_book_summaries', JSON.stringify(parsed));
 
     return {
       success: true
@@ -126,20 +169,28 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
       };
     }
 
-    const { data, error } = await supabase
-      .from('business_plans')
-      .insert([{
-        ...businessPlan,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select();
+    // Create a mock business plan with a unique ID
+    const mockId = Date.now().toString();
+    const newBusinessPlan = {
+      id: mockId,
+      ...businessPlan,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-    if (error) throw error;
+    // Add to localStorage cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      parsed.push(newBusinessPlan);
+      localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
+    } else {
+      localStorage.setItem('cached_business_plans', JSON.stringify([newBusinessPlan]));
+    }
 
     return {
       success: true,
-      data: data[0]
+      data: newBusinessPlan
     };
   } catch (error: any) {
     console.error('Error creating business plan:', error);
@@ -160,20 +211,39 @@ export const updateBusinessPlan = async (id: string, updates: Partial<BusinessPl
       };
     }
 
-    const { data, error } = await supabase
-      .from('business_plans')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select();
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Business plan not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Business plan not found'
+      };
+    }
+
+    // Update the business plan
+    const updatedPlan = {
+      ...parsed[index],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    // Update in cache
+    parsed[index] = updatedPlan;
+    localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
 
     return {
       success: true,
-      data: data[0]
+      data: updatedPlan
     };
   } catch (error: any) {
     console.error('Error updating business plan:', error);
@@ -194,12 +264,28 @@ export const deleteBusinessPlan = async (id: string) => {
       };
     }
 
-    const { error } = await supabase
-      .from('business_plans')
-      .delete()
-      .eq('id', id);
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Business plan not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Business plan not found'
+      };
+    }
+
+    // Remove from cache
+    parsed.splice(index, 1);
+    localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
 
     return {
       success: true
@@ -224,21 +310,29 @@ export const createBlogPost = async (blogPost: Omit<BlogPost, 'id' | 'created_at
       };
     }
 
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .insert([{
-        ...blogPost,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        author_id: currentUser.id
-      }])
-      .select();
+    // Create a mock blog post with a unique ID
+    const mockId = Date.now().toString();
+    const newBlogPost = {
+      id: mockId,
+      ...blogPost,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      author: { name: currentUser.name || 'Admin' }
+    };
 
-    if (error) throw error;
+    // Add to localStorage cache
+    const cachedData = localStorage.getItem('cached_blog_posts');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      parsed.push(newBlogPost);
+      localStorage.setItem('cached_blog_posts', JSON.stringify(parsed));
+    } else {
+      localStorage.setItem('cached_blog_posts', JSON.stringify([newBlogPost]));
+    }
 
     return {
       success: true,
-      data: data[0]
+      data: newBlogPost
     };
   } catch (error: any) {
     console.error('Error creating blog post:', error);
@@ -259,21 +353,39 @@ export const updateBlogPost = async (id: string, updates: Partial<BlogPost>) => 
       };
     }
 
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .eq('author_id', currentUser.id)
-      .select();
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_blog_posts');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Blog post not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id.toString() === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Blog post not found'
+      };
+    }
+
+    // Update the blog post
+    const updatedPost = {
+      ...parsed[index],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    // Update in cache
+    parsed[index] = updatedPost;
+    localStorage.setItem('cached_blog_posts', JSON.stringify(parsed));
 
     return {
       success: true,
-      data: data[0]
+      data: updatedPost
     };
   } catch (error: any) {
     console.error('Error updating blog post:', error);
@@ -294,13 +406,28 @@ export const deleteBlogPost = async (id: string) => {
       };
     }
 
-    const { error } = await supabase
-      .from('blog_posts')
-      .delete()
-      .eq('id', id)
-      .eq('author_id', currentUser.id);
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_blog_posts');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Blog post not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id.toString() === id);
+
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Blog post not found'
+      };
+    }
+
+    // Remove from cache
+    parsed.splice(index, 1);
+    localStorage.setItem('cached_blog_posts', JSON.stringify(parsed));
 
     return {
       success: true

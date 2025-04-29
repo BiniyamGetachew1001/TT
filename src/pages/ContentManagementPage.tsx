@@ -2,17 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/simple-tabs';
-import { Book, FileText, Newspaper, Plus, Search, Filter, Trash2, Edit, Eye, ShoppingCart, User, Calendar } from 'lucide-react';
+import {
+  Book, FileText, Newspaper, Plus, Search, Filter, Trash2, Edit, Eye,
+  ShoppingCart, User, Calendar, BarChart, LayoutDashboard, Users, Settings
+} from 'lucide-react';
 import { getAllBookSummaries } from '../services/bookSummaryService';
 import { getAllBusinessPlans } from '../services/businessPlanService';
 import { getAllBlogPosts } from '../services/blogService';
 import { getAllPurchases, updatePurchaseStatus } from '../services/purchaseService';
 import { deleteBookSummary, deleteBusinessPlan, deleteBlogPost } from '../services/contentManagementService';
-import { BookSummary, BusinessPlan, BlogPost, Purchase } from '../lib/supabase';
+import { BookSummary } from '../services/BookSummaryService';
+import { BusinessPlan } from '../services/businessPlanService';
+import { BlogPost } from '../services/blogService';
+import { Purchase } from '../services/purchaseService';
 import Modal from '../components/ui/Modal';
-import BookSummaryForm from '../components/forms/BookSummaryForm';
-import BusinessPlanForm from '../components/forms/BusinessPlanForm';
-import BlogPostForm from '../components/forms/BlogPostForm';
+import DashboardOverview from '../components/admin/DashboardOverview';
+import UserManagement from '../components/admin/UserManagement';
+import AnalyticsReporting from '../components/admin/AnalyticsReporting';
 
 const ContentManagementPage: React.FC = () => {
   const { isAdmin, isLoading } = useAuth();
@@ -26,11 +32,9 @@ const ContentManagementPage: React.FC = () => {
   const [businessSearchTerm, setBusinessSearchTerm] = useState('');
   const [blogSearchTerm, setBlogSearchTerm] = useState('');
   const [purchaseSearchTerm, setPurchaseSearchTerm] = useState('');
+  const [purchaseStatusFilter, setPurchaseStatusFilter] = useState<'all' | 'completed' | 'pending' | 'refunded'>('all');
 
   // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'book' | 'business' | 'blog' | null>(null);
-  const [editItem, setEditItem] = useState<BookSummary | BusinessPlan | BlogPost | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, type: 'book' | 'business' | 'blog'} | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -99,20 +103,9 @@ const ContentManagementPage: React.FC = () => {
   }, [actionSuccess]);
 
   // Handler functions
-  const handleOpenModal = (type: 'book' | 'business' | 'blog', item?: BookSummary | BusinessPlan | BlogPost) => {
-    setModalType(type);
-    setEditItem(item || null);
-    setIsModalOpen(true);
-  };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalType(null);
-    setEditItem(null);
-  };
-
-  const handleOpenDeleteConfirm = (id: string, type: 'book' | 'business' | 'blog') => {
-    setItemToDelete({ id, type });
+  const handleOpenDeleteConfirm = (id: string | number, type: 'book' | 'business' | 'blog') => {
+    setItemToDelete({ id: String(id), type });
     setDeleteConfirmOpen(true);
   };
 
@@ -160,11 +153,22 @@ const ContentManagementPage: React.FC = () => {
     }
   };
 
-  const handleFormSuccess = () => {
-    handleCloseModal();
-    // Call fetchContent from the window reference
-    if ((window as any).fetchContentRef) {
-      (window as any).fetchContentRef();
+
+
+  const handleUpdatePurchaseStatus = async (purchaseId: string, status: string) => {
+    try {
+      const result = await updatePurchaseStatus(purchaseId, status);
+      if (result.success) {
+        setActionSuccess(`Purchase status updated to ${status}`);
+        // Refresh purchases
+        if ((window as any).fetchContentRef) {
+          (window as any).fetchContentRef();
+        }
+      } else {
+        setError(result.message || 'Failed to update purchase status');
+      }
+    } catch (error: any) {
+      setError(error.message || 'An error occurred while updating purchase status');
     }
   };
 
@@ -191,30 +195,39 @@ const ContentManagementPage: React.FC = () => {
       )
     : blogPosts;
 
-  const filteredPurchases = purchaseSearchTerm
-    ? purchases.filter(purchase => {
-        const userEmail = purchase.user?.email || '';
-        const userName = purchase.user?.name || '';
-        const itemType = purchase.item_type || '';
-        const status = purchase.status || '';
-        const paymentId = purchase.payment_id || '';
+  const filteredPurchases = purchases
+    .filter(purchase => {
+      // First apply status filter
+      if (purchaseStatusFilter !== 'all' && purchase.status !== purchaseStatusFilter) {
+        return false;
+      }
 
-        // Get item title based on item_type
-        let itemTitle = '';
-        if (purchase.item_type === 'book-summary' && purchase.book_summary) {
-          itemTitle = purchase.book_summary.title || '';
-        } else if (purchase.item_type === 'business-plan' && purchase.business_plan) {
-          itemTitle = purchase.business_plan.title || '';
-        }
+      // Then apply search filter if there is a search term
+      if (!purchaseSearchTerm) {
+        return true;
+      }
 
-        return userEmail.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
-          userName.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
-          itemType.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
-          status.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
-          paymentId.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
-          itemTitle.toLowerCase().includes(purchaseSearchTerm.toLowerCase());
-      })
-    : purchases;
+      const userEmail = purchase.user?.email || '';
+      const userName = purchase.user?.name || '';
+      const itemType = purchase.item_type || '';
+      const status = purchase.status || '';
+      const paymentId = purchase.payment_id || '';
+
+      // Get item title based on item_type
+      let itemTitle = '';
+      if (purchase.item_type === 'book-summary' && purchase.book_summary) {
+        itemTitle = purchase.book_summary.title || '';
+      } else if (purchase.item_type === 'business-plan' && purchase.business_plan) {
+        itemTitle = purchase.business_plan.title || '';
+      }
+
+      return userEmail.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+        userName.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+        itemType.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+        status.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+        paymentId.toLowerCase().includes(purchaseSearchTerm.toLowerCase()) ||
+        itemTitle.toLowerCase().includes(purchaseSearchTerm.toLowerCase());
+    });
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -266,8 +279,11 @@ const ContentManagementPage: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold">Content Management</h1>
         </div>
 
-        <Tabs defaultValue="book-summaries" className="w-full">
-          <TabsList className="mb-6 bg-[#2d1e14] p-1 rounded-lg">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="mb-6 bg-[#2d1e14] p-1 rounded-lg overflow-x-auto flex-nowrap">
+            <TabsTrigger value="dashboard" className="flex items-center">
+              <LayoutDashboard size={16} className="mr-2" /> Dashboard
+            </TabsTrigger>
             <TabsTrigger value="book-summaries" className="flex items-center">
               <Book size={16} className="mr-2" /> Book Summaries
             </TabsTrigger>
@@ -280,7 +296,26 @@ const ContentManagementPage: React.FC = () => {
             <TabsTrigger value="purchases" className="flex items-center">
               <ShoppingCart size={16} className="mr-2" /> Purchases
             </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center">
+              <Users size={16} className="mr-2" /> Users
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center">
+              <BarChart size={16} className="mr-2" /> Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center">
+              <Settings size={16} className="mr-2" /> Settings
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard">
+            <DashboardOverview
+              bookSummaries={bookSummaries}
+              businessPlans={businessPlans}
+              blogPosts={blogPosts}
+              purchases={purchases}
+              isLoading={loading}
+            />
+          </TabsContent>
 
           <TabsContent value="book-summaries">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
@@ -297,12 +332,12 @@ const ContentManagementPage: React.FC = () => {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenModal('book')}
+              <Link
+                to="/admin/book-summaries/create"
                 className="gold-button flex items-center whitespace-nowrap"
               >
                 <Plus size={16} className="mr-1" /> Add Book Summary
-              </button>
+              </Link>
             </div>
 
             {loading ? (
@@ -357,12 +392,12 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                             <td className="p-3">
                               <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleOpenModal('book', book)}
+                                <Link
+                                  to={`/admin/book-summaries/edit/${book.id}`}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
-                                </button>
+                                </Link>
                                 <button
                                   onClick={() => handleOpenDeleteConfirm(book.id, 'book')}
                                   className="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 rounded text-sm flex items-center"
@@ -408,12 +443,12 @@ const ContentManagementPage: React.FC = () => {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenModal('business')}
+              <Link
+                to="/admin/business-plans/create"
                 className="gold-button flex items-center whitespace-nowrap"
               >
                 <Plus size={16} className="mr-1" /> Add Business Plan
-              </button>
+              </Link>
             </div>
 
             {loading ? (
@@ -468,12 +503,12 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                             <td className="p-3">
                               <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleOpenModal('business', plan)}
+                                <Link
+                                  to={`/admin/business-plans/edit/${plan.id}`}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
-                                </button>
+                                </Link>
                                 <button
                                   onClick={() => handleOpenDeleteConfirm(plan.id, 'business')}
                                   className="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 rounded text-sm flex items-center"
@@ -519,12 +554,12 @@ const ContentManagementPage: React.FC = () => {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenModal('blog')}
+              <Link
+                to="/admin/blog-posts/create"
                 className="gold-button flex items-center whitespace-nowrap"
               >
                 <Plus size={16} className="mr-1" /> Add Blog Post
-              </button>
+              </Link>
             </div>
 
             {loading ? (
@@ -556,7 +591,7 @@ const ContentManagementPage: React.FC = () => {
                               <div className="flex items-center">
                                 <div className="w-10 h-10 rounded overflow-hidden mr-3">
                                   <img
-                                    src={post.cover_image || '/placeholder-blog.jpg'}
+                                    src={post.coverImage || '/placeholder-blog.jpg'}
                                     alt={post.title}
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
@@ -570,15 +605,15 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                             <td className="p-3">{post.category}</td>
                             <td className="p-3">{post.status}</td>
-                            <td className="p-3">{post.published_at ? new Date(post.published_at).toLocaleDateString() : '-'}</td>
+                            <td className="p-3">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : '-'}</td>
                             <td className="p-3">
                               <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleOpenModal('blog', post)}
+                                <Link
+                                  to={`/admin/blog-posts/edit/${post.id}`}
                                   className="px-3 py-1 bg-[#3a2819] hover:bg-[#4a3829] rounded text-sm flex items-center"
                                 >
                                   <Edit size={14} className="mr-1" /> Edit
-                                </button>
+                                </Link>
                                 <button
                                   onClick={() => handleOpenDeleteConfirm(post.id, 'blog')}
                                   className="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 rounded text-sm flex items-center"
@@ -622,6 +657,22 @@ const ContentManagementPage: React.FC = () => {
                   onChange={(e) => setPurchaseSearchTerm(e.target.value)}
                   className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 pl-10 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
                 />
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative">
+                  <select
+                    value={purchaseStatusFilter}
+                    onChange={(e) => setPurchaseStatusFilter(e.target.value as 'all' | 'completed' | 'pending' | 'refunded')}
+                    className="rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c] appearance-none pr-8"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                  <Filter size={16} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
 
@@ -751,40 +802,133 @@ const ContentManagementPage: React.FC = () => {
               </>
             )}
           </TabsContent>
+
+          <TabsContent value="users">
+            <UserManagement purchases={purchases} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsReporting
+              bookSummaries={bookSummaries}
+              businessPlans={businessPlans}
+              blogPosts={blogPosts}
+              purchases={purchases}
+              isLoading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <div className="bg-[#2d1e14] rounded-lg p-6 shadow-md">
+              <h2 className="text-xl font-bold mb-6 flex items-center">
+                <Settings className="mr-2 h-5 w-5 text-[#c9a52c]" />
+                Admin Settings
+              </h2>
+
+              <div className="space-y-6">
+                {/* General Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium border-b border-[#7a4528]/50 pb-2">General Settings</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="site-name" className="block text-sm font-medium text-white">
+                        Site Name
+                      </label>
+                      <input
+                        type="text"
+                        id="site-name"
+                        defaultValue="TILkTBEB"
+                        className="w-full rounded-md bg-[#3a2819] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="admin-email" className="block text-sm font-medium text-white">
+                        Admin Email
+                      </label>
+                      <input
+                        type="email"
+                        id="admin-email"
+                        defaultValue="admin@example.com"
+                        className="w-full rounded-md bg-[#3a2819] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium border-b border-[#7a4528]/50 pb-2">Content Settings</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="default-price" className="block text-sm font-medium text-white">
+                        Default Premium Content Price
+                      </label>
+                      <input
+                        type="number"
+                        id="default-price"
+                        defaultValue="9.99"
+                        min="0"
+                        step="0.01"
+                        className="w-full rounded-md bg-[#3a2819] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="content-per-page" className="block text-sm font-medium text-white">
+                        Items Per Page
+                      </label>
+                      <input
+                        type="number"
+                        id="content-per-page"
+                        defaultValue="10"
+                        min="5"
+                        max="50"
+                        className="w-full rounded-md bg-[#3a2819] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="rounded bg-[#3a2819] border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                      />
+                      <span className="text-sm text-white">Allow users to comment on content</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="rounded bg-[#3a2819] border-[#7a4528] text-[#c9a52c] focus:ring-[#c9a52c]"
+                      />
+                      <span className="text-sm text-white">Enable offline reading for purchased content</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end pt-4 border-t border-[#7a4528]/30">
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-md bg-[#c9a52c] text-white hover:bg-[#d9b53c] transition-colors"
+                  >
+                    Save Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Content Creation/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={`${editItem ? 'Edit' : 'Create'} ${modalType === 'book' ? 'Book Summary' : modalType === 'business' ? 'Business Plan' : 'Blog Post'}`}
-        size="lg"
-      >
-        {modalType === 'book' && (
-          <BookSummaryForm
-            bookSummary={editItem as BookSummary}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
 
-        {modalType === 'business' && (
-          <BusinessPlanForm
-            businessPlan={editItem as BusinessPlan}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
-
-        {modalType === 'blog' && (
-          <BlogPostForm
-            blogPost={editItem as BlogPost}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseModal}
-          />
-        )}
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal

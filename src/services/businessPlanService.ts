@@ -1,5 +1,22 @@
-import { supabase } from '../lib/supabase';
-import type { BusinessPlan } from '../lib/supabase';
+import { mockBusinessPlans } from '../data/mockData';
+
+// Define BusinessPlan type locally since we removed the Supabase import
+export type BusinessPlan = {
+  id: string | number;
+  title: string;
+  description?: string;
+  industry: string;
+  content?: string;
+  cover_image?: string;
+  coverImage?: string; // For compatibility with mock data
+  read_time?: string;
+  readTime?: string; // For compatibility with mock data
+  price?: number;
+  isPremium?: boolean; // For compatibility with mock data
+  author?: string;
+  created_at?: string;
+  updated_at?: string;
+};
 
 // Get the current user from localStorage
 const getCurrentUser = () => {
@@ -17,31 +34,37 @@ const getCurrentUser = () => {
 
 export const getAllBusinessPlans = async (industry?: string) => {
   try {
-    const currentUser = getCurrentUser();
+    console.log('Using mock data for business plans');
 
-    // Use Supabase to fetch business plans
-    let query = supabase
-      .from('business_plans')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Convert mock data to match the expected format
+    const formattedData = mockBusinessPlans.map(plan => ({
+      id: plan.id.toString(),
+      title: plan.title,
+      industry: plan.industry,
+      description: plan.description,
+      content: plan.content,
+      cover_image: plan.coverImage,
+      read_time: plan.readTime,
+      price: plan.isPremium ? plan.price : 0,
+      author: 'Admin',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
 
-    // Add industry filter if provided
-    if (industry) {
-      query = query.eq('industry', industry);
-    }
+    // Apply industry filter if provided
+    const filteredData = industry
+      ? formattedData.filter(item => item.industry === industry)
+      : formattedData;
 
-    // Admin page filtering is handled by RLS policies
-
-    const { data, error } = await query;
-
-    if (error) throw error;
+    // Cache the data for offline use
+    localStorage.setItem('cached_business_plans', JSON.stringify(filteredData));
 
     return {
       success: true,
-      data: data || []
+      data: filteredData
     };
   } catch (error: any) {
-    console.error('Error fetching business plans:', error);
+    console.error('Error fetching mock business plans:', error);
     return {
       success: false,
       message: error.message || 'Failed to fetch business plans',
@@ -52,24 +75,52 @@ export const getAllBusinessPlans = async (industry?: string) => {
 
 export const getBusinessPlanById = async (id: string) => {
   try {
-    const currentUser = getCurrentUser();
-    let query = supabase
-      .from('business_plans')
-      .select('*')
-      .eq('id', id);
+    console.log('Using mock data for business plan by ID:', id);
 
-    // Admin page filtering is handled by RLS policies
+    // Find the business plan in mock data
+    const plan = mockBusinessPlans.find(plan => plan.id.toString() === id);
 
-    const { data, error } = await query.single();
+    if (!plan) {
+      throw new Error('Business plan not found');
+    }
 
-    if (error) throw error;
+    // Convert to expected format
+    const formattedData = {
+      id: plan.id.toString(),
+      title: plan.title,
+      industry: plan.industry,
+      description: plan.description,
+      content: plan.content,
+      cover_image: plan.coverImage,
+      read_time: plan.readTime,
+      price: plan.isPremium ? plan.price : 0,
+      author: 'Admin',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // Cache this individual business plan for offline access
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      const index = parsed.findIndex((item: any) => item.id === id);
+      if (index >= 0) {
+        parsed[index] = formattedData;
+      } else {
+        parsed.push(formattedData);
+      }
+      localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
+    } else {
+      // Create a new cache with just this business plan
+      localStorage.setItem('cached_business_plans', JSON.stringify([formattedData]));
+    }
 
     return {
       success: true,
-      data
+      data: formattedData
     };
   } catch (error: any) {
-    console.error('Error fetching business plan:', error);
+    console.error('Error fetching mock business plan:', error);
     return {
       success: false,
       message: error.message || 'Failed to fetch business plan',
@@ -89,47 +140,43 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
       };
     }
 
-    // Handle cover image upload if it's a data URL
+    console.log('Creating mock business plan with user:', currentUser.email, 'Role:', currentUser.role);
+
+    // Generate a mock ID (timestamp-based for uniqueness)
+    const mockId = Date.now().toString();
+
+    // Use the provided cover image or a default one
     let coverImage = businessPlan.cover_image;
-    if (coverImage && coverImage.startsWith('data:')) {
-      const fileName = `${Date.now()}-${businessPlan.title.replace(/\s+/g, '-').toLowerCase()}.jpg`;
-      const { data, error } = await supabase.storage
-        .from('business-plan-covers')
-        .upload(fileName, coverImage, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      // Get the public URL for the uploaded image
-      const { data: urlData } = supabase.storage
-        .from('business-plan-covers')
-        .getPublicUrl(fileName);
-
-      coverImage = urlData.publicUrl;
+    if (!coverImage) {
+      coverImage = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=300&auto=format&fit=crop";
     }
 
-    const { data, error } = await supabase
-      .from('business_plans')
-      .insert([{
-        ...businessPlan,
-        cover_image: coverImage,
+    // Create the new business plan with mock data
+    const newBusinessPlan = {
+      id: mockId,
+      ...businessPlan,
+      cover_image: coverImage,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
+    // Add to localStorage cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      parsed.push(newBusinessPlan);
+      localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
+    } else {
+      localStorage.setItem('cached_business_plans', JSON.stringify([newBusinessPlan]));
+    }
 
-    if (error) throw error;
-
+    console.log('Mock business plan created successfully:', newBusinessPlan);
     return {
       success: true,
-      data
+      data: newBusinessPlan
     };
   } catch (error: any) {
-    console.error('Error creating business plan:', error);
+    console.error('Error creating mock business plan:', error);
     return {
       success: false,
       message: error.message || 'Failed to create business plan',
@@ -149,47 +196,51 @@ export const updateBusinessPlan = async (id: string, businessPlan: Partial<Busin
       };
     }
 
-    // Handle cover image upload if it's a data URL
+    console.log('Updating mock business plan with user:', currentUser.email, 'Role:', currentUser.role);
+
+    // Use the provided cover image or keep the existing one
     let coverImage = businessPlan.cover_image;
-    if (coverImage && coverImage.startsWith('data:')) {
-      const fileName = `${Date.now()}-${businessPlan.title?.replace(/\s+/g, '-').toLowerCase() || id}.jpg`;
-      const { data, error } = await supabase.storage
-        .from('business-plan-covers')
-        .upload(fileName, coverImage, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
 
-      if (error) throw error;
-
-      // Get the public URL for the uploaded image
-      const { data: urlData } = supabase.storage
-        .from('business-plan-covers')
-        .getPublicUrl(fileName);
-
-      coverImage = urlData.publicUrl;
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Business plan not found in cache',
+        data: null
+      };
     }
 
-    const { data, error } = await supabase
-      .from('business_plans')
-      .update({
-        ...businessPlan,
-        cover_image: coverImage,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
 
-      .select()
-      .single();
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Business plan not found',
+        data: null
+      };
+    }
 
-    if (error) throw error;
+    // Update the business plan
+    const updatedPlan = {
+      ...parsed[index],
+      ...businessPlan,
+      cover_image: coverImage || parsed[index].cover_image,
+      updated_at: new Date().toISOString()
+    };
 
+    // Update in cache
+    parsed[index] = updatedPlan;
+    localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
+
+    console.log('Mock business plan updated successfully:', updatedPlan);
     return {
       success: true,
-      data
+      data: updatedPlan
     };
   } catch (error: any) {
-    console.error('Error updating business plan:', error);
+    console.error('Error updating mock business plan:', error);
     return {
       success: false,
       message: error.message || 'Failed to update business plan',
@@ -208,19 +259,37 @@ export const deleteBusinessPlan = async (id: string) => {
       };
     }
 
-    const { error } = await supabase
-      .from('business_plans')
-      .delete()
-      .eq('id', id)
+    console.log('Deleting mock business plan with user:', currentUser.email, 'Role:', currentUser.role);
 
+    // Get existing data from cache
+    const cachedData = localStorage.getItem('cached_business_plans');
+    if (!cachedData) {
+      return {
+        success: false,
+        message: 'Business plan not found in cache'
+      };
+    }
 
-    if (error) throw error;
+    const parsed = JSON.parse(cachedData);
+    const index = parsed.findIndex((item: any) => item.id === id);
 
+    if (index === -1) {
+      return {
+        success: false,
+        message: 'Business plan not found'
+      };
+    }
+
+    // Remove from cache
+    parsed.splice(index, 1);
+    localStorage.setItem('cached_business_plans', JSON.stringify(parsed));
+
+    console.log('Mock business plan deleted successfully');
     return {
       success: true
     };
   } catch (error: any) {
-    console.error('Error deleting business plan:', error);
+    console.error('Error deleting mock business plan:', error);
     return {
       success: false,
       message: error.message || 'Failed to delete business plan'

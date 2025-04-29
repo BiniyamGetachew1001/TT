@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { BlogPost } from '../../lib/supabase';
+import { BlogPost } from '../../services/blogService';
 import { createBlogPost, updateBlogPost } from '../../services/contentManagementService';
+import RichTextEditor from '../ui/RichTextEditor';
 
 interface BlogPostFormProps {
   blogPost?: BlogPost;
@@ -18,9 +19,9 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
       title: '',
       content: '',
       category: '',
-      cover_image: '',
+      coverImage: '',
       status: 'draft',
-      published_at: null
+      publishedAt: null
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -73,16 +74,16 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
     setIsSubmitting(true);
     setSuccessMessage('');
 
-    // Set published_at date if status is published
+    // Set publishedAt date if status is published
     const dataToSubmit = {
       ...formData,
-      published_at: formData.status === 'published' ? new Date().toISOString() : null
+      publishedAt: formData.status === 'published' ? new Date().toISOString() : null
     };
 
     try {
       if (blogPost?.id) {
         // Update existing blog post
-        const result = await updateBlogPost(blogPost.id, dataToSubmit);
+        const result = await updateBlogPost(String(blogPost.id), dataToSubmit);
         if (result.success) {
           setSuccessMessage('Blog post updated successfully!');
           setTimeout(() => {
@@ -189,14 +190,14 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
         </div>
 
         <div className="space-y-1 md:col-span-2">
-          <label htmlFor="cover_image" className="block text-sm font-medium text-white">
+          <label htmlFor="coverImage" className="block text-sm font-medium text-white">
             Cover Image URL
           </label>
           <input
             type="text"
-            id="cover_image"
-            name="cover_image"
-            value={formData.cover_image || ''}
+            id="coverImage"
+            name="coverImage"
+            value={formData.coverImage || ''}
             onChange={handleChange}
             placeholder="https://example.com/image.jpg"
             className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
@@ -208,14 +209,19 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
         <label htmlFor="content" className="block text-sm font-medium text-white">
           Content <span className="text-red-400">*</span>
         </label>
-        <textarea
-          id="content"
-          name="content"
-          rows={12}
-          value={formData.content || ''}
-          onChange={handleChange}
-          className={`w-full rounded-md bg-[#2d1e14] border ${errors.content ? 'border-red-500' : 'border-[#7a4528]/50'} px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
-        />
+        <div className={`${errors.content ? 'border border-red-500 rounded-md' : ''}`}>
+          <RichTextEditor
+            initialValue={formData.content || ''}
+            onChange={(value) => {
+              setFormData({ ...formData, content: value });
+              if (errors.content) {
+                setErrors({ ...errors, content: '' });
+              }
+            }}
+            minHeight="300px"
+            placeholder="Enter the blog post content here..."
+          />
+        </div>
         {errors.content && <p className="text-red-400 text-xs mt-1">{errors.content}</p>}
         <p className="text-xs text-gray-400 mt-1">
           You can use Markdown formatting for rich text.

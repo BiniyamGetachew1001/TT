@@ -1,6 +1,22 @@
 import api from './api';
-import { supabase } from '../lib/supabase';
-import { mockSummaries } from '../data/mockData';
+import { mockSummaries, mockBusinessPlans } from '../data/mockData';
+
+// Define Purchase type locally since we removed the Supabase import
+export type Purchase = {
+  id: string;
+  user_id: string;
+  item_type: 'book-summary' | 'business-plan';
+  item_id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'refunded' | 'cancelled';
+  payment_id: string;
+  created_at: string;
+  updated_at?: string;
+  book_summary?: any;
+  business_plan?: any;
+  user?: any;
+};
 
 export const purchaseBook = async (userId: string, bookId: string, amount: number) => {
   try {
@@ -61,51 +77,55 @@ export const getUserPurchases = async (userId: string) => {
   }
 
   try {
-    // Use Supabase to fetch user purchases from the purchase_details view
-    const { data, error } = await supabase
-      .from('purchase_details')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .order('created_at', { ascending: false });
+    console.log('Using mock data for user purchases');
 
-    if (error) {
-      // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist')) {
-        console.log('Using mock data as fallback for purchases');
-
-        // Create mock purchases from the first 2 book summaries
-        const mockPurchases = mockSummaries.slice(0, 2).map(summary => ({
-          id: `purchase-${summary.id}`,
-          user_id: userId,
-          item_type: 'book-summary',
-          item_id: summary.id.toString(),
-          amount: summary.isPremium ? 9.99 : 0,
-          currency: 'USD',
-          status: 'completed',
-          payment_id: `mock-payment-${summary.id}`,
-          created_at: new Date().toISOString(),
-          book_summary: {
-            id: summary.id.toString(),
-            title: summary.title,
-            author: summary.author,
-            cover_image: summary.coverImage,
-            category: summary.category
-          }
-        }));
-
-        return {
-          success: true,
-          data: mockPurchases
-        };
+    // Create mock purchases from the first 2 book summaries and 1 business plan
+    const mockBookPurchases = mockSummaries.slice(0, 2).map(summary => ({
+      id: `purchase-${summary.id}`,
+      user_id: userId,
+      item_type: 'book-summary',
+      item_id: summary.id.toString(),
+      amount: summary.isPremium ? 9.99 : 0,
+      currency: 'USD',
+      status: 'completed',
+      payment_id: `mock-payment-${summary.id}`,
+      created_at: new Date().toISOString(),
+      book_summary: {
+        id: summary.id.toString(),
+        title: summary.title,
+        author: summary.author,
+        cover_image: summary.coverImage,
+        category: summary.category
       }
+    }));
 
-      throw error;
-    }
+    const mockBusinessPlanPurchases = mockBusinessPlans.slice(0, 1).map(plan => ({
+      id: `purchase-bp-${plan.id}`,
+      user_id: userId,
+      item_type: 'business-plan',
+      item_id: plan.id.toString(),
+      amount: plan.isPremium ? plan.price : 0,
+      currency: 'USD',
+      status: 'completed',
+      payment_id: `mock-payment-bp-${plan.id}`,
+      created_at: new Date().toISOString(),
+      business_plan: {
+        id: plan.id.toString(),
+        title: plan.title,
+        industry: plan.industry,
+        cover_image: plan.coverImage
+      }
+    }));
+
+    // Combine both types of purchases
+    const mockPurchases = [...mockBookPurchases, ...mockBusinessPlanPurchases];
+
+    // Sort by created_at in descending order
+    mockPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return {
       success: true,
-      data: data || []
+      data: mockPurchases
     };
   } catch (error: any) {
     console.error('Error fetching user purchases:', error);
@@ -129,58 +149,27 @@ export const checkPurchaseStatus = async (userId: string, itemType: string, item
   }
 
   try {
-    // Use Supabase to check purchase status
-    const { data, error } = await supabase
-      .from('purchases')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('item_type', itemType)
-      .eq('item_id', itemId)
-      .eq('status', 'completed')
-      .single();
+    console.log('Using mock data for purchase status check');
 
-    if (error) {
-      // If it's just a "no rows returned" error, that's expected
-      if (error.code === 'PGRST116') {
-        return {
-          success: true,
-          purchased: false,
-          data: null
-        };
-      }
-
-      // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist')) {
-        console.log('Using mock data as fallback for purchase status');
-
-        // For demo purposes, let's say the first 2 books are purchased
-        const mockId = parseInt(itemId, 10);
-        const isPurchased = mockId <= 2;
-
-        return {
-          success: true,
-          purchased: isPurchased,
-          data: isPurchased ? {
-            id: '00000000-0000-0000-0000-000000000001', // Valid UUID format
-            user_id: userId,
-            item_type: itemType,
-            item_id: itemId,
-            amount: 9.99,
-            currency: 'USD',
-            status: 'completed',
-            payment_id: `mock-payment-${itemId}`,
-            created_at: new Date().toISOString()
-          } : null
-        };
-      }
-
-      throw error;
-    }
+    // For demo purposes, let's say the first 2 books and first business plan are purchased
+    const mockId = parseInt(itemId, 10);
+    const isPurchased = (itemType === 'book-summary' && mockId <= 2) ||
+                        (itemType === 'business-plan' && mockId === 1);
 
     return {
       success: true,
-      purchased: !!data,
-      data
+      purchased: isPurchased,
+      data: isPurchased ? {
+        id: `mock-purchase-${itemType}-${itemId}`,
+        user_id: userId,
+        item_type: itemType,
+        item_id: itemId,
+        amount: 9.99,
+        currency: 'USD',
+        status: 'completed',
+        payment_id: `mock-payment-${itemId}`,
+        created_at: new Date().toISOString()
+      } : null
     };
   } catch (error: any) {
     console.error('Error checking purchase status:', error);
@@ -205,134 +194,61 @@ export const getMockPurchaseStatus = async (userId: string, itemType: string, it
 // Admin functions
 export const getAllPurchases = async () => {
   try {
-    // First, get all purchases
-    const { data: purchasesData, error: purchasesError } = await supabase
-      .from('purchases')
-      .select('*')
-      .order('created_at', { ascending: false });
+    console.log('Using mock data for all purchases');
 
-    // Handle errors with mock data
-    if (purchasesError) {
-      // If the table doesn't exist or there's another database error, return mock data
-      if (purchasesError.code === '42P01' || purchasesError.message.includes('does not exist')) {
-        console.log('Using mock data as fallback for all purchases');
+    // Create mock purchases
+    const mockBookPurchases = mockSummaries.slice(0, 3).map((summary, index) => ({
+      id: `purchase-book-${index}`,
+      user_id: `user-${index % 3 + 1}`,
+      item_type: 'book-summary',
+      item_id: summary.id.toString(),
+      amount: summary.isPremium ? 9.99 : 0,
+      currency: 'USD',
+      status: ['completed', 'pending', 'refunded'][index % 3],
+      payment_id: `mock-payment-${index}`,
+      created_at: new Date(Date.now() - index * 86400000).toISOString(),
+      user: {
+        email: `user${index % 3 + 1}@example.com`,
+        name: `User ${index % 3 + 1}`
+      },
+      book_summary: {
+        id: summary.id.toString(),
+        title: summary.title,
+        author: summary.author,
+        category: summary.category
+      },
+      business_plan: null
+    }));
 
-        // Create mock purchases
-        const mockPurchases = mockSummaries.slice(0, 5).map((summary, index) => ({
-          id: `purchase-${index}`,
-          user_id: `user-${index % 3 + 1}`,
-          item_type: index % 2 === 0 ? 'book-summary' : 'business-plan',
-          item_id: summary.id.toString(),
-          amount: summary.isPremium ? 9.99 : 0,
-          currency: 'USD',
-          status: ['completed', 'pending', 'refunded'][index % 3],
-          payment_id: `mock-payment-${index}`,
-          created_at: new Date(Date.now() - index * 86400000).toISOString(),
-          user: {
-            email: `user${index % 3 + 1}@example.com`,
-            name: `User ${index % 3 + 1}`
-          },
-          book_summary: index % 2 === 0 ? {
-            id: summary.id.toString(),
-            title: summary.title,
-            author: summary.author,
-            category: summary.category
-          } : null,
-          business_plan: index % 2 === 1 ? {
-            id: summary.id.toString(),
-            title: `Business Plan for ${summary.title}`,
-            industry: ['Technology', 'Finance', 'Healthcare', 'Education', 'Retail'][index % 5]
-          } : null
-        }));
-
-        return {
-          success: true,
-          data: mockPurchases
-        };
+    const mockBusinessPlanPurchases = mockBusinessPlans.slice(0, 2).map((plan, index) => ({
+      id: `purchase-bp-${index}`,
+      user_id: `user-${index % 3 + 1}`,
+      item_type: 'business-plan',
+      item_id: plan.id.toString(),
+      amount: plan.isPremium ? plan.price : 0,
+      currency: 'USD',
+      status: ['completed', 'pending', 'refunded'][index % 3],
+      payment_id: `mock-payment-bp-${index}`,
+      created_at: new Date(Date.now() - (index + 3) * 86400000).toISOString(),
+      user: {
+        email: `user${index % 3 + 1}@example.com`,
+        name: `User ${index % 3 + 1}`
+      },
+      book_summary: null,
+      business_plan: {
+        id: plan.id.toString(),
+        title: plan.title,
+        industry: plan.industry
       }
+    }));
 
-      throw purchasesError;
-    }
-
-    // If no purchases found, return empty array
-    if (!purchasesData || purchasesData.length === 0) {
-      return {
-        success: true,
-        data: []
-      };
-    }
-
-    // If we have purchases, fetch related data
-    // Get unique user IDs
-    const userIds = [...new Set(purchasesData.map(p => p.user_id))];
-
-    // Get users
-    const { data: usersData } = await supabase
-      .from('users')
-      .select('id, email, name')
-      .in('id', userIds);
-
-    // Get unique item IDs for book summaries
-    const bookSummaryIds = [...new Set(
-      purchasesData
-        .filter(p => p.item_type === 'book-summary')
-        .map(p => p.item_id)
-    )];
-
-    // Get book summaries if there are any book summary purchases
-    let bookSummariesData = [];
-    if (bookSummaryIds.length > 0) {
-      const { data } = await supabase
-        .from('book_summaries')
-        .select('id, title, author, category')
-        .in('id', bookSummaryIds);
-      bookSummariesData = data || [];
-    }
-
-    // Get unique item IDs for business plans
-    const businessPlanIds = [...new Set(
-      purchasesData
-        .filter(p => p.item_type === 'business-plan')
-        .map(p => p.item_id)
-    )];
-
-    // Get business plans if there are any business plan purchases
-    let businessPlansData = [];
-    if (businessPlanIds.length > 0) {
-      const { data } = await supabase
-        .from('business_plans')
-        .select('id, title, industry')
-        .in('id', businessPlanIds);
-      businessPlansData = data || [];
-    }
-
-    // Combine the data
-    const enrichedPurchases = purchasesData.map(purchase => {
-      // Find related user
-      const user = usersData?.find(u => u.id === purchase.user_id) || {
-        email: 'unknown@example.com',
-        name: 'Unknown User'
-      };
-
-      // Find related item based on item_type
-      let item = null;
-      if (purchase.item_type === 'book-summary') {
-        item = bookSummariesData?.find(b => b.id === purchase.item_id);
-      } else if (purchase.item_type === 'business-plan') {
-        item = businessPlansData?.find(b => b.id === purchase.item_id);
-      }
-
-      return {
-        ...purchase,
-        user,
-        book_summary: purchase.item_type === 'book-summary' ? item : null,
-        business_plan: purchase.item_type === 'business-plan' ? item : null
-      };
-    });
+    // Combine and sort by created_at in descending order
+    const mockPurchases = [...mockBookPurchases, ...mockBusinessPlanPurchases];
+    mockPurchases.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return {
       success: true,
-      data: enrichedPurchases
+      data: mockPurchases
     };
   } catch (error: any) {
     console.error('Error fetching all purchases:', error);
@@ -346,17 +262,17 @@ export const getAllPurchases = async () => {
 
 export const updatePurchaseStatus = async (id: string, status: string) => {
   try {
-    const { data, error } = await supabase
-      .from('purchases')
-      .update({ status })
-      .eq('id', id)
-      .select();
+    console.log('Using mock data for updating purchase status');
 
-    if (error) throw error;
-
+    // In a real implementation, this would update the database
+    // For now, just return a mock success response
     return {
       success: true,
-      data: data[0]
+      data: {
+        id,
+        status,
+        updated_at: new Date().toISOString()
+      }
     };
   } catch (error: any) {
     console.error('Error updating purchase status:', error);

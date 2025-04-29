@@ -3,9 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import BookPurchase from '../components/BookPurchase';
 import { checkPurchaseStatus } from '../services/purchaseService';
-import { getBookSummaryById } from '../services/bookSummaryService';
+import { getBookSummaryById, BookSummary } from '../services/bookSummaryService';
 import { useAuth } from '../contexts/AuthContext';
-import { BookSummary } from '../lib/supabase';
 
 
 

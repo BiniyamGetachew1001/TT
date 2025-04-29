@@ -7,20 +7,12 @@ import ReadingPage from './pages/ReadingPage';
 import BookmarksPage from './pages/BookmarksPage';
 import BusinessPlansPage from './pages/BusinessPlansPage';
 import BusinessPlanDetailPage from './pages/BusinessPlanDetailPage';
-import SupabaseTest from './components/SupabaseTest';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Test route completely separate */}
-        <Route path="/test" element={
-          <div className="min-h-screen">
-            <SupabaseTest />
-          </div>
-        } />
-        
-        {/* All other routes with Layout */}
+        {/* All routes with Layout */}
         <Route path="/*" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="book-summaries" element={<BookSummariesPage />} />

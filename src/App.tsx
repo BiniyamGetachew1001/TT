@@ -18,6 +18,12 @@ import BookPurchasePage from './pages/BookPurchasePage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import ContentManagementPage from './pages/ContentManagementPage';
+import CreateBookSummaryPage from './pages/CreateBookSummaryPage';
+import EditBookSummaryPage from './pages/EditBookSummaryPage';
+import CreateBusinessPlanPage from './pages/CreateBusinessPlanPage';
+import EditBusinessPlanPage from './pages/EditBusinessPlanPage';
+import CreateBlogPostPage from './pages/CreateBlogPostPage';
+import EditBlogPostPage from './pages/EditBlogPostPage';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { AuthProvider } from './contexts/AuthContext';
 import './index.css';
@@ -47,6 +53,12 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/content" element={<ContentManagementPage />} />
+            <Route path="/admin/book-summaries/create" element={<CreateBookSummaryPage />} />
+            <Route path="/admin/book-summaries/edit/:id" element={<EditBookSummaryPage />} />
+            <Route path="/admin/business-plans/create" element={<CreateBusinessPlanPage />} />
+            <Route path="/admin/business-plans/edit/:id" element={<EditBusinessPlanPage />} />
+            <Route path="/admin/blog-posts/create" element={<CreateBlogPostPage />} />
+            <Route path="/admin/blog-posts/edit/:id" element={<EditBlogPostPage />} />
             </Routes>
           </Layout>
         </BookmarkProvider>

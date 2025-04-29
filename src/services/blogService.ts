@@ -1,6 +1,19 @@
 import api from './api';
-import { supabase } from '../lib/supabase';
-import type { BlogPost } from '../lib/supabase';
+import { mockBlogPosts } from '../data/mockData';
+
+// Define BlogPost type locally since we removed the Supabase import
+export type BlogPost = {
+  id: string | number;
+  title: string;
+  excerpt?: string;
+  content: string;
+  category: string;
+  tags?: string[];
+  status: 'draft' | 'published' | 'archived';
+  publishedAt?: string | null;
+  coverImage?: string;
+  author?: { name: string };
+};
 
 // Get the current user from localStorage
 const getCurrentUser = () => {
@@ -21,57 +34,46 @@ export const getAllBlogPosts = async (category?: string) => {
     const currentUser = getCurrentUser();
     const isAdminPage = window.location.pathname.includes('/admin');
 
-    // Use Supabase to fetch blog posts
-    let query = supabase
-      .from('blog_posts')
-      .select('*')
-      .order('created_at', { ascending: false });
+    console.log('Using mock data for blog posts');
 
-    // Only filter by published status if not on admin page
+    // Filter posts based on status if not on admin page
+    let filteredPosts = [...mockBlogPosts];
+
     if (!isAdminPage) {
-      query = query.eq('status', 'published');
+      filteredPosts = filteredPosts.filter(post => post.status === 'published');
     }
 
     // Add category filter if provided
     if (category) {
-      query = query.eq('category', category);
+      filteredPosts = filteredPosts.filter(post => post.category === category);
     }
 
-    // If we have a current user and we're in the admin page, filter by author_id
-    if (currentUser && isAdminPage) {
-      query = query.eq('author_id', currentUser.id);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    // Log the data received from Supabase
-    console.log('Blog posts from Supabase:', data);
-
-    // Transform the data to match the expected format
-    const transformedData = data.map((post: BlogPost) => {
-      console.log('Processing post:', post.id, 'Cover image:', post.cover_image);
-      return {
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt,
-      content: post.content,
-      category: post.category,
-      tags: post.tags,
-      status: post.status,
-      publishedAt: post.published_at,
-      coverImage: post.cover_image,
-      author: { name: 'Admin' } // Since we don't have author name in the current setup
-    };
-    });
+    // Cache the data for offline use
+    localStorage.setItem('cached_blog_posts', JSON.stringify(filteredPosts));
 
     return {
       success: true,
-      data: transformedData
+      data: filteredPosts
     };
   } catch (error: any) {
-    console.error('Error fetching blog posts:', error);
+    console.error('Error fetching mock blog posts:', error);
+
+    // Try to use cached data as a last resort
+    try {
+      const cachedData = localStorage.getItem('cached_blog_posts');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        return {
+          success: true,
+          data: parsed,
+          offline: true,
+          message: 'Using cached data due to error'
+        };
+      }
+    } catch (cacheError) {
+      console.error('Error reading cached data:', cacheError);
+    }
+
     return {
       success: false,
       message: error.message || 'Failed to fetch blog posts',
@@ -82,48 +84,57 @@ export const getAllBlogPosts = async (category?: string) => {
 
 export const getBlogPostById = async (id: string) => {
   try {
-    const currentUser = getCurrentUser();
-    const isAdminPage = window.location.pathname.includes('/admin');
+    console.log('Using mock data for blog post by ID:', id);
 
-    // Use Supabase to fetch a single blog post
-    let query = supabase
-      .from('blog_posts')
-      .select('*')
-      .eq('id', id);
+    // Find the blog post in mock data
+    const post = mockBlogPosts.find(post => post.id.toString() === id);
 
-    // If we have a current user and we're in the admin page, filter by author_id
-    if (currentUser && isAdminPage) {
-      query = query.eq('author_id', currentUser.id);
-    }
-
-    const { data, error } = await query.single();
-
-    if (error) throw error;
-
-    if (!data) {
+    if (!post) {
       throw new Error('Blog post not found');
     }
 
-    // Transform the data to match the expected format
-    const transformedData = {
-      id: data.id,
-      title: data.title,
-      excerpt: data.excerpt,
-      content: data.content,
-      category: data.category,
-      tags: data.tags,
-      status: data.status,
-      publishedAt: data.published_at,
-      coverImage: data.cover_image,
-      author: { name: 'Admin' } // Since we don't have author name in the current setup
-    };
+    // Cache this individual blog post for offline access
+    const cachedData = localStorage.getItem('cached_blog_posts');
+    if (cachedData) {
+      const parsed = JSON.parse(cachedData);
+      const index = parsed.findIndex((item: any) => item.id.toString() === id);
+      if (index >= 0) {
+        parsed[index] = post;
+      } else {
+        parsed.push(post);
+      }
+      localStorage.setItem('cached_blog_posts', JSON.stringify(parsed));
+    } else {
+      // Create a new cache with just this blog post
+      localStorage.setItem('cached_blog_posts', JSON.stringify([post]));
+    }
 
     return {
       success: true,
-      data: transformedData
+      data: post
     };
   } catch (error: any) {
-    console.error('Error fetching blog post:', error);
+    console.error('Error fetching mock blog post:', error);
+
+    // Try to use cached data as a last resort
+    try {
+      const cachedData = localStorage.getItem('cached_blog_posts');
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const post = parsed.find((item: any) => item.id.toString() === id);
+        if (post) {
+          return {
+            success: true,
+            data: post,
+            offline: true,
+            message: 'Using cached data due to error'
+          };
+        }
+      }
+    } catch (cacheError) {
+      console.error('Error reading cached data:', cacheError);
+    }
+
     return {
       success: false,
       message: error.message || 'Failed to fetch blog post',
@@ -132,7 +143,7 @@ export const getBlogPostById = async (id: string) => {
   }
 };
 
-// These functions are kept for backward compatibility but now use real data from Supabase
+// These functions are kept for backward compatibility
 export const getMockBlogPosts = async (category?: string) => {
   return await getAllBlogPosts(category);
 };

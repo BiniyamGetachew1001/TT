@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { supabase } from '../lib/supabase';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -9,21 +8,21 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
   try {
     const { category, status } = req.query;
-    
+
     // Build filter conditions
     const where: any = {};
-    
+
     if (category) {
       where.category = category;
     }
-    
+
     if (status) {
       where.status = status;
     } else {
       // By default, only return published posts for public API
       where.status = 'published';
     }
-    
+
     const posts = await prisma.blogPost.findMany({
       where,
       include: {
@@ -40,7 +39,7 @@ router.get('/', async (req, res) => {
         publishedAt: 'desc'
       }
     });
-    
+
     res.json(posts);
   } catch (error) {
     console.error('Error fetching blog posts:', error);
@@ -64,16 +63,16 @@ router.get('/:id', async (req, res) => {
         bookmarks: true
       }
     });
-    
+
     if (!post) {
       return res.status(404).json({ error: 'Blog post not found' });
     }
-    
+
     // Only return published posts unless explicitly requesting a draft
     if (post.status !== 'published' && req.query.includeUnpublished !== 'true') {
       return res.status(404).json({ error: 'Blog post not found' });
     }
-    
+
     res.json(post);
   } catch (error) {
     console.error('Error fetching blog post:', error);
@@ -85,20 +84,17 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { title, content, excerpt, coverImage, authorId, category, tags, status } = req.body;
-    
-    // Store cover image in Supabase Storage if provided
+
+    // Just use the provided image URL or a placeholder
     let coverImageUrl = coverImage;
     if (coverImage && coverImage.startsWith('data:')) {
-      const { data, error } = await supabase.storage
-        .from('blog-covers')
-        .upload(`${Date.now()}-${title.replace(/\s+/g, '-').toLowerCase()}.jpg`, coverImage);
-      
-      if (error) throw error;
-      coverImageUrl = data.path;
+      // In a real implementation, we would save the image to a file or cloud storage
+      // For now, just use a placeholder image URL
+      coverImageUrl = `https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=300&auto=format&fit=crop&t=${Date.now()}`;
     }
-    
+
     const publishedAt = status === 'published' ? new Date() : null;
-    
+
     const newPost = await prisma.blogPost.create({
       data: {
         title,
@@ -112,7 +108,7 @@ router.post('/', async (req, res) => {
         publishedAt
       }
     });
-    
+
     res.status(201).json(newPost);
   } catch (error) {
     console.error('Error creating blog post:', error);
@@ -125,37 +121,34 @@ router.put('/:id', async (req, res) => {
   try {
     const { title, content, excerpt, coverImage, category, tags, status } = req.body;
     const postId = req.params.id;
-    
+
     // Get the existing post
     const existingPost = await prisma.blogPost.findUnique({
       where: { id: postId }
     });
-    
+
     if (!existingPost) {
       return res.status(404).json({ error: 'Blog post not found' });
     }
-    
-    // Store cover image in Supabase Storage if provided and different from existing
+
+    // Just use the provided image URL or keep the existing one
     let coverImageUrl = existingPost.coverImage;
     if (coverImage && coverImage !== existingPost.coverImage) {
       if (coverImage.startsWith('data:')) {
-        const { data, error } = await supabase.storage
-          .from('blog-covers')
-          .upload(`${Date.now()}-${title.replace(/\s+/g, '-').toLowerCase()}.jpg`, coverImage);
-        
-        if (error) throw error;
-        coverImageUrl = data.path;
+        // In a real implementation, we would save the image to a file or cloud storage
+        // For now, just use a placeholder image URL
+        coverImageUrl = `https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=300&auto=format&fit=crop&t=${Date.now()}`;
       } else {
         coverImageUrl = coverImage;
       }
     }
-    
+
     // Set publishedAt if status is changing to published
-    const publishedAt = 
-      status === 'published' && existingPost.status !== 'published' 
-        ? new Date() 
+    const publishedAt =
+      status === 'published' && existingPost.status !== 'published'
+        ? new Date()
         : existingPost.publishedAt;
-    
+
     const updatedPost = await prisma.blogPost.update({
       where: { id: postId },
       data: {
@@ -170,7 +163,7 @@ router.put('/:id', async (req, res) => {
         updatedAt: new Date()
       }
     });
-    
+
     res.json(updatedPost);
   } catch (error) {
     console.error('Error updating blog post:', error);
@@ -182,16 +175,16 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const postId = req.params.id;
-    
+
     // Check if post exists
     const post = await prisma.blogPost.findUnique({
       where: { id: postId }
     });
-    
+
     if (!post) {
       return res.status(404).json({ error: 'Blog post not found' });
     }
-    
+
     // Delete related bookmarks first
     await prisma.bookmark.deleteMany({
       where: {
@@ -199,12 +192,12 @@ router.delete('/:id', async (req, res) => {
         itemId: postId
       }
     });
-    
+
     // Delete the post
     await prisma.blogPost.delete({
       where: { id: postId }
     });
-    
+
     res.json({ message: 'Blog post deleted successfully' });
   } catch (error) {
     console.error('Error deleting blog post:', error);

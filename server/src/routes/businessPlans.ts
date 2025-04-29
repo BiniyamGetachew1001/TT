@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { supabase } from '../lib/supabase';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -42,15 +41,12 @@ router.post('/', async (req, res) => {
   try {
     const { title, industry, description, coverImage, author, readTime, price, sections, keyFeatures } = req.body;
 
-    // Store cover image in Supabase Storage if provided
+    // Just use the provided image URL or a placeholder
     let coverImageUrl = coverImage;
     if (coverImage && coverImage.startsWith('data:')) {
-      const { data, error } = await supabase.storage
-        .from('business-plan-covers')
-        .upload(`${Date.now()}-${title.replace(/\s+/g, '-').toLowerCase()}.jpg`, coverImage);
-
-      if (error) throw error;
-      coverImageUrl = data.path;
+      // In a real implementation, we would save the image to a file or cloud storage
+      // For now, just use a placeholder image URL
+      coverImageUrl = `https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=300&auto=format&fit=crop&t=${Date.now()}`;
     }
 
     const newPlan = await prisma.businessPlan.create({
@@ -89,16 +85,13 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Business plan not found' });
     }
 
-    // Store cover image in Supabase Storage if provided and different from existing
+    // Just use the provided image URL or keep the existing one
     let coverImageUrl = existingPlan.coverImage;
     if (coverImage && coverImage !== existingPlan.coverImage) {
       if (coverImage.startsWith('data:')) {
-        const { data, error } = await supabase.storage
-          .from('business-plan-covers')
-          .upload(`${Date.now()}-${title.replace(/\s+/g, '-').toLowerCase()}.jpg`, coverImage);
-
-        if (error) throw error;
-        coverImageUrl = data.path;
+        // In a real implementation, we would save the image to a file or cloud storage
+        // For now, just use a placeholder image URL
+        coverImageUrl = `https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=300&auto=format&fit=crop&t=${Date.now()}`;
       } else {
         coverImageUrl = coverImage;
       }

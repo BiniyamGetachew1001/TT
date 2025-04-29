@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ActivityLog as ActivityLogType } from '../../lib/supabase';
+// Define ActivityLogType locally since we removed the Supabase import
+export type ActivityLogType = {
+  id: string;
+  user_id?: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  details?: any;
+  created_at: string;
+};
 import { getRecentActivityLogs } from '../../services/activityLogService';
 import { Clock, FileText, Book, ShoppingCart, Plus, Edit, Trash2, Archive, Calendar, CheckCircle } from 'lucide-react';
 
@@ -10,7 +19,7 @@ interface ActivityLogProps {
 
 /**
  * Activity Log component
- * 
+ *
  * Displays a list of recent activities in the system
  */
 const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' }) => {
@@ -22,10 +31,10 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
     const fetchActivities = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const result = await getRecentActivityLogs(limit);
-        
+
         if (result.success) {
           setActivities(result.data);
         } else {
@@ -37,7 +46,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
         setLoading(false);
       }
     };
-    
+
     fetchActivities();
   }, [limit]);
 
@@ -82,7 +91,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
     const { action, item_type, item_title, user_email } = activity;
     const itemTypeFormatted = item_type.replace('-', ' ');
     const userDisplay = user_email || 'A user';
-    
+
     switch (action) {
       case 'create':
         return (
@@ -141,26 +150,26 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) {
       return 'just now';
     }
-    
+
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) {
       return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
     }
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
       return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
     }
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 30) {
       return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
     }
-    
+
     // For older dates, just show the actual date
     return date.toLocaleDateString();
   };
@@ -170,7 +179,7 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ limit = 10, className = '' })
       <h3 className="text-lg font-medium mb-4 flex items-center">
         <Clock size={18} className="mr-2 text-[#c9a52c]" /> Recent Activity
       </h3>
-      
+
       {loading ? (
         <div className="flex justify-center py-6">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#c9a52c]"></div>

@@ -182,6 +182,105 @@ export const businessPlans = [
   }
 ];
 
+export const mockBusinessPlans = [
+  {
+    id: 1,
+    title: "Coffee Shop Business Plan",
+    industry: "Food & Beverage",
+    description: "A comprehensive business plan for starting a specialty coffee shop in an urban area.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    coverImage: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=300&auto=format&fit=crop",
+    readTime: "15 min",
+    isPremium: true,
+    price: 19.99
+  },
+  {
+    id: 2,
+    title: "E-commerce Startup Plan",
+    industry: "Retail",
+    description: "A detailed plan for launching an online retail business with minimal investment.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    coverImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=300&auto=format&fit=crop",
+    readTime: "20 min",
+    isPremium: true,
+    price: 24.99
+  },
+  {
+    id: 3,
+    title: "Freelance Consulting Business",
+    industry: "Consulting",
+    description: "How to establish and grow a successful freelance consulting practice.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    coverImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=300&auto=format&fit=crop",
+    readTime: "12 min",
+    isPremium: false,
+    price: 0
+  }
+];
+
+export const mockBlogPosts = [
+  {
+    id: 1,
+    title: "10 Essential Entrepreneurship Lessons",
+    excerpt: "Key insights every entrepreneur should know before starting a business.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    category: "Entrepreneurship",
+    tags: ["startup", "business", "entrepreneurship"],
+    status: "published",
+    publishedAt: "2023-05-15T10:30:00Z",
+    coverImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=300&auto=format&fit=crop",
+    author: { name: "Admin" }
+  },
+  {
+    id: 2,
+    title: "How to Build a Successful E-commerce Business",
+    excerpt: "A comprehensive guide to starting and scaling your online store.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    category: "E-commerce",
+    tags: ["e-commerce", "online business", "retail"],
+    status: "published",
+    publishedAt: "2023-06-22T14:15:00Z",
+    coverImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=300&auto=format&fit=crop",
+    author: { name: "Admin" }
+  },
+  {
+    id: 3,
+    title: "Financial Planning for Small Businesses",
+    excerpt: "Essential financial strategies to keep your small business thriving.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    category: "Finance",
+    tags: ["finance", "small business", "planning"],
+    status: "published",
+    publishedAt: "2023-07-10T09:45:00Z",
+    coverImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=300&auto=format&fit=crop",
+    author: { name: "Admin" }
+  },
+  {
+    id: 4,
+    title: "Marketing Strategies for 2023",
+    excerpt: "The latest marketing trends and strategies for the coming year.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    category: "Marketing",
+    tags: ["marketing", "digital", "strategy"],
+    status: "published",
+    publishedAt: "2023-08-05T16:20:00Z",
+    coverImage: "https://images.unsplash.com/photo-1533750516457-a7f992034fec?q=80&w=300&auto=format&fit=crop",
+    author: { name: "Admin" }
+  },
+  {
+    id: 5,
+    title: "Productivity Hacks for Entrepreneurs",
+    excerpt: "Simple techniques to boost your productivity and get more done.",
+    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    category: "Productivity",
+    tags: ["productivity", "time management", "efficiency"],
+    status: "draft",
+    publishedAt: null,
+    coverImage: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=300&auto=format&fit=crop",
+    author: { name: "Admin" }
+  }
+];
+
 export const getUserReadingProgress = (bookId: number): number => {
   const progress = localStorage.getItem(`book-progress-${bookId}`);
   return progress ? parseInt(progress, 10) : 0;

@@ -5,9 +5,9 @@ import SearchBar from './SearchBar';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from './Footer';
-import NetworkStatus from './ui/NetworkStatus';
-import ConnectionDiagnostics from './ui/ConnectionDiagnostics';
-import { supabase } from '../lib/supabase';
+import OfflineIndicator from './ui/OfflineIndicator';
+import MockLoginButton from './MockLoginButton';
+import TestBookSummaryCreation from './TestBookSummaryCreation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -169,14 +169,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Footer />
         </div>
 
-        {/* Network Status Indicator */}
-        <NetworkStatus supabaseUrl="https://ygamcvlfdxawhirwugcd.supabase.co" />
+        {/* Offline Indicator */}
+        <OfflineIndicator />
 
-        {/* Connection Diagnostics Tool */}
-        <ConnectionDiagnostics
-          supabaseUrl="https://ygamcvlfdxawhirwugcd.supabase.co"
-          apiKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnYW1jdmxmZHhhd2hpcnd1Z2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDIzNjQsImV4cCI6MjA2MDAxODM2NH0.Mdb42Wtpe9SPm4N2YpKRgKmachbGFlYfRVTbrTV822M"
-        />
+        {/* Mock Login Button for Testing */}
+        <MockLoginButton />
+
+        {/* Test Book Summary Creation */}
+        <TestBookSummaryCreation />
       </div>
     </div>
   );

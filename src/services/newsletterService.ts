@@ -1,24 +1,36 @@
-import { supabase } from '../lib/supabase';
-
 export interface NewsletterSubscription {
   email: string;
   name: string;
   subscribed_at?: string;
 }
 
+// Mock storage for newsletter subscribers
+const getSubscribers = (): NewsletterSubscription[] => {
+  const storedSubscribers = localStorage.getItem('newsletter_subscribers');
+  if (storedSubscribers) {
+    try {
+      return JSON.parse(storedSubscribers);
+    } catch (e) {
+      console.error('Error parsing newsletter subscribers from localStorage:', e);
+      return [];
+    }
+  }
+  return [];
+};
+
+const saveSubscribers = (subscribers: NewsletterSubscription[]) => {
+  localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
+};
+
 export const subscribeToNewsletter = async (email: string, name: string) => {
   try {
-    // Check if the email already exists
-    const { data: existingSubscription, error: checkError } = await supabase
-      .from('newsletter_subscribers')
-      .select('*')
-      .eq('email', email)
-      .single();
+    console.log('Using mock data for newsletter subscription');
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 means no rows returned, which is expected if the email is not subscribed
-      throw checkError;
-    }
+    // Get current subscribers
+    const subscribers = getSubscribers();
+
+    // Check if the email already exists
+    const existingSubscription = subscribers.find(sub => sub.email === email);
 
     if (existingSubscription) {
       return {
@@ -28,27 +40,14 @@ export const subscribeToNewsletter = async (email: string, name: string) => {
     }
 
     // Add new subscription
-    const { data, error } = await supabase
-      .from('newsletter_subscribers')
-      .insert([
-        {
-          email,
-          name,
-          subscribed_at: new Date().toISOString()
-        }
-      ]);
+    const newSubscription: NewsletterSubscription = {
+      email,
+      name,
+      subscribed_at: new Date().toISOString()
+    };
 
-    if (error) {
-      // If the table doesn't exist, return a mock success response
-      if (error.code === '42P01' || error.message.includes('does not exist')) {
-        console.log('Using mock response for newsletter subscription');
-        return {
-          success: true,
-          message: 'Thank you for subscribing to our newsletter!'
-        };
-      }
-      throw error;
-    }
+    subscribers.push(newSubscription);
+    saveSubscribers(subscribers);
 
     return {
       success: true,
@@ -65,12 +64,24 @@ export const subscribeToNewsletter = async (email: string, name: string) => {
 
 export const unsubscribeFromNewsletter = async (email: string) => {
   try {
-    const { error } = await supabase
-      .from('newsletter_subscribers')
-      .delete()
-      .eq('email', email);
+    console.log('Using mock data for newsletter unsubscription');
 
-    if (error) throw error;
+    // Get current subscribers
+    const subscribers = getSubscribers();
+
+    // Filter out the email to unsubscribe
+    const updatedSubscribers = subscribers.filter(sub => sub.email !== email);
+
+    // If no subscribers were removed, the email wasn't subscribed
+    if (subscribers.length === updatedSubscribers.length) {
+      return {
+        success: false,
+        message: 'This email is not subscribed to our newsletter.'
+      };
+    }
+
+    // Save updated subscribers
+    saveSubscribers(updatedSubscribers);
 
     return {
       success: true,
