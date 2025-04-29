@@ -1,9 +1,24 @@
 import { supabase } from '../lib/supabase';
 import type { BookSummary } from '../lib/supabase';
-import { mockSummaries } from '../data/mockData';
+
+// Get the current user from localStorage
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+      return null;
+    }
+  }
+  return null;
+};
 
 export const getAllBookSummaries = async (category?: string) => {
   try {
+    const currentUser = getCurrentUser();
+
     // Use Supabase to fetch book summaries
     let query = supabase
       .from('book_summaries')
@@ -14,6 +29,8 @@ export const getAllBookSummaries = async (category?: string) => {
     if (category && category !== 'all') {
       query = query.eq('category', category);
     }
+
+    // Admin page filtering is handled by RLS policies
 
     const { data, error } = await query;
 
@@ -31,31 +48,6 @@ export const getAllBookSummaries = async (category?: string) => {
         console.error('Network error. Please check your internet connection and Supabase URL.');
       } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
         console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
-      }
-
-      // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist') ||
-          error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        console.log('Using mock data as fallback');
-        const filteredData = category && category !== 'all'
-          ? mockSummaries.filter(summary => summary.category === category)
-          : mockSummaries;
-
-        return {
-          success: true,
-          data: filteredData.map(summary => ({
-            id: summary.id.toString(),
-            title: summary.title,
-            author: summary.author,
-            description: summary.description,
-            category: summary.category,
-            cover_image: summary.coverImage,
-            read_time: summary.readTime,
-            price: summary.isPremium ? 9.99 : 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })) as BookSummary[]
-        };
       }
 
       throw error;
@@ -77,11 +69,15 @@ export const getAllBookSummaries = async (category?: string) => {
 
 export const getBookSummaryById = async (id: string) => {
   try {
-    const { data, error } = await supabase
+    const currentUser = getCurrentUser();
+    let query = supabase
       .from('book_summaries')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    // Admin page filtering is handled by RLS policies
+
+    const { data, error } = await query.single();
 
     if (error) {
       console.error('Supabase error fetching book summary:', error);
@@ -97,33 +93,6 @@ export const getBookSummaryById = async (id: string) => {
         console.error('Network error. Please check your internet connection and Supabase URL.');
       } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
         console.error('DNS resolution error. Please check your Supabase URL and internet connection.');
-      }
-
-      // If the table doesn't exist or there's another database error, return mock data
-      if (error.code === '42P01' || error.message.includes('does not exist') ||
-          error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        console.log('Using mock data as fallback for book detail');
-        const mockId = parseInt(id, 10);
-        const mockSummary = mockSummaries.find(summary => summary.id === mockId);
-
-        if (mockSummary) {
-          return {
-            success: true,
-            data: {
-              id: mockSummary.id.toString(),
-              title: mockSummary.title,
-              author: mockSummary.author,
-              description: mockSummary.description,
-              category: mockSummary.category,
-              cover_image: mockSummary.coverImage,
-              read_time: mockSummary.readTime,
-              price: mockSummary.isPremium ? 9.99 : 0,
-              content: mockSummary.content,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            } as BookSummary
-          };
-        }
       }
 
       throw error;
@@ -145,6 +114,15 @@ export const getBookSummaryById = async (id: string) => {
 
 export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated',
+        data: null
+      };
+    }
+
     // Handle cover image upload if it's a data URL
     let coverImage = bookSummary.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -168,7 +146,13 @@ export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'c
 
     const { data, error } = await supabase
       .from('book_summaries')
-      .insert([{ ...bookSummary, cover_image: coverImage }])
+      .insert([{
+        ...bookSummary,
+        cover_image: coverImage,
+
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
       .select()
       .single();
 
@@ -190,6 +174,15 @@ export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'c
 
 export const updateBookSummary = async (id: string, bookSummary: Partial<BookSummary>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated',
+        data: null
+      };
+    }
+
     // Handle cover image upload if it's a data URL
     let coverImage = bookSummary.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -213,8 +206,13 @@ export const updateBookSummary = async (id: string, bookSummary: Partial<BookSum
 
     const { data, error } = await supabase
       .from('book_summaries')
-      .update({ ...bookSummary, cover_image: coverImage, updated_at: new Date() })
+      .update({
+        ...bookSummary,
+        cover_image: coverImage,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
+
       .select()
       .single();
 
@@ -236,10 +234,19 @@ export const updateBookSummary = async (id: string, bookSummary: Partial<BookSum
 
 export const deleteBookSummary = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { error } = await supabase
       .from('book_summaries')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+
 
     if (error) throw error;
 

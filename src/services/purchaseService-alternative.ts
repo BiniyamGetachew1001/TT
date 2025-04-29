@@ -7,7 +7,7 @@ export const purchaseItem = async (userId: string, itemType: string, itemId: str
   try {
     // First check if the user already purchased this item
     const { purchased } = await checkPurchaseStatus(userId, itemType, itemId);
-    
+
     if (purchased) {
       return {
         success: true,
@@ -15,7 +15,7 @@ export const purchaseItem = async (userId: string, itemType: string, itemId: str
         alreadyPurchased: true
       };
     }
-    
+
     // Create a new purchase record
     const { data, error } = await supabase
       .from('purchases')
@@ -29,9 +29,9 @@ export const purchaseItem = async (userId: string, itemType: string, itemId: str
         payment_id: `sim_${Date.now()}` // Simulated payment ID
       }])
       .select();
-    
+
     if (error) throw error;
-    
+
     return {
       success: true,
       data
@@ -69,10 +69,10 @@ export const getUserPurchases = async (userId: string) => {
       // If the table doesn't exist or there's another database error, return mock data
       if (purchasesError.code === '42P01' || purchasesError.message.includes('does not exist')) {
         console.log('Using mock data as fallback for purchases');
-        
+
         // Create mock purchases from the first 2 book summaries
         const mockPurchases = mockSummaries.slice(0, 2).map(summary => ({
-          id: `purchase-${summary.id}`,
+          id: '00000000-0000-0000-0000-00000000000' + summary.id, // Valid UUID format
           user_id: userId,
           item_type: 'book-summary',
           item_id: summary.id.toString(),
@@ -89,13 +89,13 @@ export const getUserPurchases = async (userId: string) => {
             category: summary.category
           }
         }));
-        
+
         return {
           success: true,
           data: mockPurchases
         };
       }
-      
+
       throw purchasesError;
     }
 
@@ -111,7 +111,7 @@ export const getUserPurchases = async (userId: string) => {
     const bookSummaryIds = purchases
       .filter(p => p.item_type === 'book-summary')
       .map(p => p.item_id);
-    
+
     const businessPlanIds = purchases
       .filter(p => p.item_type === 'business-plan')
       .map(p => p.item_id);
@@ -123,7 +123,7 @@ export const getUserPurchases = async (userId: string) => {
         .from('book_summaries')
         .select('id, title, author, cover_image, category')
         .in('id', bookSummaryIds);
-      
+
       if (booksError) {
         console.error('Error fetching book summaries:', booksError);
       } else {
@@ -138,7 +138,7 @@ export const getUserPurchases = async (userId: string) => {
         .from('business_plans')
         .select('id, title, industry, cover_image')
         .in('id', businessPlanIds);
-      
+
       if (plansError) {
         console.error('Error fetching business plans:', plansError);
       } else {
@@ -209,20 +209,20 @@ export const checkPurchaseStatus = async (userId: string, itemType: string, item
           data: null
         };
       }
-      
+
       // If the table doesn't exist or there's another database error, return mock data
       if (error.code === '42P01' || error.message.includes('does not exist')) {
         console.log('Using mock data as fallback for purchase status');
-        
+
         // For demo purposes, let's say the first 2 books are purchased
         const mockId = parseInt(itemId, 10);
         const isPurchased = mockId <= 2;
-        
+
         return {
           success: true,
           purchased: isPurchased,
           data: isPurchased ? {
-            id: `purchase-${itemId}`,
+            id: '00000000-0000-0000-0000-000000000001', // Valid UUID format
             user_id: userId,
             item_type: itemType,
             item_id: itemId,
@@ -234,7 +234,7 @@ export const checkPurchaseStatus = async (userId: string, itemType: string, item
           } : null
         };
       }
-      
+
       throw error;
     }
 

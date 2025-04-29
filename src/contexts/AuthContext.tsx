@@ -121,9 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // For testing purposes, allow a specific email to bypass authentication
       if (email === 'biniyam.getachew@aastustudent.edu.et') {
-        // Create a mock admin user
+        // Create a mock admin user with a valid UUID
         const mockAdminUser = {
-          id: 'admin-user-id',
+          id: '00000000-0000-0000-0000-000000000000', // Valid UUID format
           email: email,
           name: 'Biniyam Getachew',
           role: 'admin'

@@ -16,14 +16,23 @@ const NetworkStatus: React.FC<NetworkStatusProps> = ({ supabaseUrl }) => {
         // Try to fetch a small resource from the Supabase domain
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch(`${supabaseUrl}/storage/v1/object/public/health-check`, {
+
+        // Use the REST API endpoint instead of storage
+        const response = await fetch(`${supabaseUrl}/rest/v1/`, {
           method: 'HEAD',
-          signal: controller.signal
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnYW1jdmxmZHhhd2hpcnd1Z2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDIzNjQsImV4cCI6MjA2MDAxODM2NH0.Mdb42Wtpe9SPm4N2YpKRgKmachbGFlYfRVTbrTV822M',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'apikey, Content-Type, Authorization'
+          },
+          signal: controller.signal,
+          mode: 'cors'
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (response.ok) {
           setStatus('online');
           setMessage('Connected to database');
@@ -37,7 +46,7 @@ const NetworkStatus: React.FC<NetworkStatusProps> = ({ supabaseUrl }) => {
       } catch (error: any) {
         console.error('Network check error:', error);
         setStatus('offline');
-        
+
         if (error.name === 'AbortError') {
           setMessage('Connection timeout');
         } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
@@ -47,16 +56,16 @@ const NetworkStatus: React.FC<NetworkStatusProps> = ({ supabaseUrl }) => {
         } else {
           setMessage('Database connection issue');
         }
-        
+
         setIsVisible(true);
       }
     };
 
     checkConnection();
-    
+
     // Check connection every 30 seconds
     const intervalId = setInterval(checkConnection, 30000);
-    
+
     return () => {
       clearInterval(intervalId);
     };
@@ -68,10 +77,10 @@ const NetworkStatus: React.FC<NetworkStatusProps> = ({ supabaseUrl }) => {
   }
 
   return (
-    <div 
+    <div
       className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md px-3 py-2 text-sm shadow-lg transition-all duration-300 ${
-        status === 'online' 
-          ? 'bg-green-900/80 text-green-100' 
+        status === 'online'
+          ? 'bg-green-900/80 text-green-100'
           : 'bg-red-900/80 text-red-100'
       }`}
     >
@@ -87,7 +96,7 @@ const NetworkStatus: React.FC<NetworkStatusProps> = ({ supabaseUrl }) => {
           <span>Using mock data</span>
         </div>
       )}
-      <button 
+      <button
         onClick={() => setIsVisible(false)}
         className="ml-2 rounded-full p-1 hover:bg-black/20"
         aria-label="Close"

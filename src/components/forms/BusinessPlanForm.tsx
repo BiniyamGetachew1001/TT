@@ -20,7 +20,9 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
       industry: '',
       cover_image: '',
       price: 0,
-      content: ''
+      content: '',
+      author: '',
+      read_time: ''
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,7 +31,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Handle price as a number
     if (name === 'price') {
       setFormData({
@@ -42,7 +44,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
         [name]: value
       });
     }
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -54,33 +56,37 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.title?.trim()) {
       newErrors.title = 'Title is required';
     }
-    
+
     if (!formData.industry?.trim()) {
       newErrors.industry = 'Industry is required';
     }
-    
+
+    if (!formData.author?.trim()) {
+      newErrors.author = 'Author is required';
+    }
+
     if (formData.price === undefined || formData.price < 0) {
       newErrors.price = 'Price must be a positive number or zero';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
     setSuccessMessage('');
-    
+
     try {
       if (businessPlan?.id) {
         // Update existing business plan
@@ -133,16 +139,16 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           {successMessage}
         </div>
       )}
-      
+
       {errors.submit && (
         <div className="bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-md mb-4">
           {errors.submit}
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-200">
+        <div className="space-y-1">
+          <label htmlFor="title" className="block text-sm font-medium text-white">
             Title <span className="text-red-400">*</span>
           </label>
           <input
@@ -155,9 +161,24 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           />
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="industry" className="block text-sm font-medium text-gray-200">
+
+        <div className="space-y-1">
+          <label htmlFor="author" className="block text-sm font-medium text-white">
+            Author <span className="text-red-400">*</span>
+          </label>
+          <input
+            type="text"
+            id="author"
+            name="author"
+            value={formData.author || ''}
+            onChange={handleChange}
+            className={`w-full rounded-md bg-[#2d1e14] border ${errors.author ? 'border-red-500' : 'border-[#7a4528]/50'} px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]`}
+          />
+          {errors.author && <p className="text-red-400 text-xs mt-1">{errors.author}</p>}
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="industry" className="block text-sm font-medium text-white">
             Industry <span className="text-red-400">*</span>
           </label>
           <select
@@ -174,9 +195,32 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           </select>
           {errors.industry && <p className="text-red-400 text-xs mt-1">{errors.industry}</p>}
         </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+
+        <div className="space-y-1">
+          <label htmlFor="read_time" className="block text-sm font-medium text-white">
+            Read Time
+          </label>
+          <select
+            id="read_time"
+            name="read_time"
+            value={formData.read_time || ''}
+            onChange={handleChange}
+            className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
+          >
+            <option value="">Select read time</option>
+            <option value="5 min">5 min</option>
+            <option value="10 min">10 min</option>
+            <option value="15 min">15 min</option>
+            <option value="20 min">20 min</option>
+            <option value="25 min">25 min</option>
+            <option value="30 min">30 min</option>
+            <option value="45 min">45 min</option>
+            <option value="60 min">60 min</option>
+          </select>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="price" className="block text-sm font-medium text-white">
             Price <span className="text-red-400">*</span>
           </label>
           <div className="relative">
@@ -196,9 +240,9 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           </div>
           {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price}</p>}
         </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
+
+        <div className="space-y-1">
+          <label htmlFor="cover_image" className="block text-sm font-medium text-white">
             Cover Image URL
           </label>
           <input
@@ -212,9 +256,9 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           />
         </div>
       </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="description" className="block text-sm font-medium text-gray-200">
+
+      <div className="space-y-1">
+        <label htmlFor="description" className="block text-sm font-medium text-white">
           Description
         </label>
         <textarea
@@ -226,9 +270,9 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="content" className="block text-sm font-medium text-gray-200">
+
+      <div className="space-y-1">
+        <label htmlFor="content" className="block text-sm font-medium text-white">
           Content
         </label>
         <textarea
@@ -240,7 +284,7 @@ const BusinessPlanForm: React.FC<BusinessPlanFormProps> = ({
           className="w-full rounded-md bg-[#2d1e14] border border-[#7a4528]/50 px-3 py-2 text-white focus:border-[#c9a52c] focus:outline-none focus:ring-1 focus:ring-[#c9a52c]"
         />
       </div>
-      
+
       <div className="flex justify-end space-x-3 pt-4 border-t border-[#7a4528]/30">
         <button
           type="button"

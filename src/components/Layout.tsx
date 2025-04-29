@@ -6,6 +6,7 @@ import { useBookmarks } from '../contexts/BookmarkContext';
 import { useAuth } from '../contexts/AuthContext';
 import Footer from './Footer';
 import NetworkStatus from './ui/NetworkStatus';
+import ConnectionDiagnostics from './ui/ConnectionDiagnostics';
 import { supabase } from '../lib/supabase';
 
 interface LayoutProps {
@@ -170,6 +171,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Network Status Indicator */}
         <NetworkStatus supabaseUrl="https://ygamcvlfdxawhirwugcd.supabase.co" />
+
+        {/* Connection Diagnostics Tool */}
+        <ConnectionDiagnostics
+          supabaseUrl="https://ygamcvlfdxawhirwugcd.supabase.co"
+          apiKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnYW1jdmxmZHhhd2hpcnd1Z2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NDIzNjQsImV4cCI6MjA2MDAxODM2NH0.Mdb42Wtpe9SPm4N2YpKRgKmachbGFlYfRVTbrTV822M"
+        />
       </div>
     </div>
   );

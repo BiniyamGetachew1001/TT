@@ -9,7 +9,7 @@ import { getAllBlogPosts } from '../services/blogService';
 import { getAllPurchases, updatePurchaseStatus } from '../services/purchaseService';
 import { deleteBookSummary, deleteBusinessPlan, deleteBlogPost } from '../services/contentManagementService';
 import { BookSummary, BusinessPlan, BlogPost, Purchase } from '../lib/supabase';
-import Modal from '../components/ui/modal';
+import Modal from '../components/ui/Modal';
 import BookSummaryForm from '../components/forms/BookSummaryForm';
 import BusinessPlanForm from '../components/forms/BusinessPlanForm';
 import BlogPostForm from '../components/forms/BlogPostForm';
@@ -732,10 +732,10 @@ const ContentManagementPage: React.FC = () => {
                             </td>
                           </tr>
                         ))
-                      ) : searchTerm ? (
+                      ) : purchaseSearchTerm ? (
                         <tr>
                           <td colSpan={7} className="p-6 text-center text-gray-400">
-                            No results found for "{searchTerm}"
+                            No results found for "{purchaseSearchTerm}"
                           </td>
                         </tr>
                       ) : (

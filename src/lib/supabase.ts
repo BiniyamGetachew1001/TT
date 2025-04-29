@@ -39,13 +39,25 @@ class RobustSupabaseClient {
     this.lastConnectionAttempt = now;
 
     try {
-      // Simple health check query
-      const { error } = await this.client.from('health_check').select('count').maybeSingle();
+      // Try a simple query to check connection
+      // We'll try to get the current timestamp from Supabase
+      const { data, error } = await this.client.rpc('get_timestamp');
 
-      // If there's no error or the error is just that the table doesn't exist, we're connected
-      if (!error || error.code === '42P01') {
+      // If there's no error or the error is just that the function doesn't exist, we're connected
+      if (!error || error.code === '42883') { // 42883 is the error code for function not found
         this.connectionStatus = 'connected';
         console.log('Supabase connection successful');
+
+        // If the function doesn't exist, let's create it for future checks
+        if (error?.code === '42883') {
+          try {
+            // Create the timestamp function
+            await this.client.rpc('create_timestamp_function', {});
+          } catch (funcError) {
+            // Ignore errors here, we'll try again next time
+            console.log('Could not create timestamp function, will try again later');
+          }
+        }
       } else {
         this.connectionStatus = 'disconnected';
         console.warn('Supabase connection failed:', error.message);
@@ -53,6 +65,21 @@ class RobustSupabaseClient {
     } catch (err) {
       this.connectionStatus = 'disconnected';
       console.warn('Supabase connection error:', err);
+
+      // Try an alternative check using a simple table query
+      try {
+        // Try to query the users table (which should exist in most Supabase projects)
+        const { error } = await this.client.from('users').select('count').limit(1);
+
+        // If there's no error or the error is just that the table doesn't exist, we're connected
+        if (!error || error.code === '42P01') {
+          this.connectionStatus = 'connected';
+          console.log('Supabase connection successful (alternative check)');
+        }
+      } catch (altErr) {
+        // Still disconnected
+        console.warn('Supabase alternative connection check also failed');
+      }
     }
   }
 
@@ -107,6 +134,7 @@ export type BookSummary = {
   price: number;
   created_at: string;
   updated_at: string;
+  user_id?: string;
 };
 
 export type BusinessPlan = {
@@ -121,6 +149,7 @@ export type BusinessPlan = {
   price: number;
   created_at: string;
   updated_at: string;
+  user_id?: string;
 };
 
 export type Purchase = {

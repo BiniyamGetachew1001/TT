@@ -1,8 +1,24 @@
 import { supabase } from '../lib/supabase';
 import type { BusinessPlan } from '../lib/supabase';
 
+// Get the current user from localStorage
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
 export const getAllBusinessPlans = async (industry?: string) => {
   try {
+    const currentUser = getCurrentUser();
+
     // Use Supabase to fetch business plans
     let query = supabase
       .from('business_plans')
@@ -13,6 +29,8 @@ export const getAllBusinessPlans = async (industry?: string) => {
     if (industry) {
       query = query.eq('industry', industry);
     }
+
+    // Admin page filtering is handled by RLS policies
 
     const { data, error } = await query;
 
@@ -34,11 +52,15 @@ export const getAllBusinessPlans = async (industry?: string) => {
 
 export const getBusinessPlanById = async (id: string) => {
   try {
-    const { data, error } = await supabase
+    const currentUser = getCurrentUser();
+    let query = supabase
       .from('business_plans')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    // Admin page filtering is handled by RLS policies
+
+    const { data, error } = await query.single();
 
     if (error) throw error;
 
@@ -58,6 +80,15 @@ export const getBusinessPlanById = async (id: string) => {
 
 export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated',
+        data: null
+      };
+    }
+
     // Handle cover image upload if it's a data URL
     let coverImage = businessPlan.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -81,7 +112,13 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
 
     const { data, error } = await supabase
       .from('business_plans')
-      .insert([{ ...businessPlan, cover_image: coverImage }])
+      .insert([{
+        ...businessPlan,
+        cover_image: coverImage,
+
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
       .select()
       .single();
 
@@ -103,6 +140,15 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
 
 export const updateBusinessPlan = async (id: string, businessPlan: Partial<BusinessPlan>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated',
+        data: null
+      };
+    }
+
     // Handle cover image upload if it's a data URL
     let coverImage = businessPlan.cover_image;
     if (coverImage && coverImage.startsWith('data:')) {
@@ -126,8 +172,13 @@ export const updateBusinessPlan = async (id: string, businessPlan: Partial<Busin
 
     const { data, error } = await supabase
       .from('business_plans')
-      .update({ ...businessPlan, cover_image: coverImage, updated_at: new Date() })
+      .update({
+        ...businessPlan,
+        cover_image: coverImage,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
+
       .select()
       .single();
 
@@ -149,10 +200,19 @@ export const updateBusinessPlan = async (id: string, businessPlan: Partial<Busin
 
 export const deleteBusinessPlan = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { error } = await supabase
       .from('business_plans')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+
 
     if (error) throw error;
 

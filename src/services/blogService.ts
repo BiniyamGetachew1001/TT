@@ -2,18 +2,44 @@ import api from './api';
 import { supabase } from '../lib/supabase';
 import type { BlogPost } from '../lib/supabase';
 
+// Get the current user from localStorage
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
 export const getAllBlogPosts = async (category?: string) => {
   try {
+    const currentUser = getCurrentUser();
+    const isAdminPage = window.location.pathname.includes('/admin');
+
     // Use Supabase to fetch blog posts
     let query = supabase
       .from('blog_posts')
       .select('*')
-      .eq('status', 'published')
       .order('created_at', { ascending: false });
+
+    // Only filter by published status if not on admin page
+    if (!isAdminPage) {
+      query = query.eq('status', 'published');
+    }
 
     // Add category filter if provided
     if (category) {
       query = query.eq('category', category);
+    }
+
+    // If we have a current user and we're in the admin page, filter by author_id
+    if (currentUser && isAdminPage) {
+      query = query.eq('author_id', currentUser.id);
     }
 
     const { data, error } = await query;
@@ -56,12 +82,21 @@ export const getAllBlogPosts = async (category?: string) => {
 
 export const getBlogPostById = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    const isAdminPage = window.location.pathname.includes('/admin');
+
     // Use Supabase to fetch a single blog post
-    const { data, error } = await supabase
+    let query = supabase
       .from('blog_posts')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    // If we have a current user and we're in the admin page, filter by author_id
+    if (currentUser && isAdminPage) {
+      query = query.eq('author_id', currentUser.id);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) throw error;
 

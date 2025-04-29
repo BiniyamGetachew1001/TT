@@ -1,9 +1,31 @@
 import { supabase } from '../lib/supabase';
 import type { BookSummary, BusinessPlan, BlogPost } from '../lib/supabase';
 
+// Get the current user from localStorage
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
 // Book Summaries Management
 export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     // Activity logging functionality is currently disabled.
     // Uncomment the following lines once the activity log table is created.
     const { data, error } = await supabase
@@ -32,6 +54,14 @@ export const createBookSummary = async (bookSummary: Omit<BookSummary, 'id' | 'c
 
 export const updateBookSummary = async (id: string, updates: Partial<BookSummary>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { data, error } = await supabase
       .from('book_summaries')
       .update({
@@ -58,6 +88,14 @@ export const updateBookSummary = async (id: string, updates: Partial<BookSummary
 
 export const deleteBookSummary = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { error } = await supabase
       .from('book_summaries')
       .delete()
@@ -80,6 +118,14 @@ export const deleteBookSummary = async (id: string) => {
 // Business Plans Management
 export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { data, error } = await supabase
       .from('business_plans')
       .insert([{
@@ -106,6 +152,14 @@ export const createBusinessPlan = async (businessPlan: Omit<BusinessPlan, 'id' |
 
 export const updateBusinessPlan = async (id: string, updates: Partial<BusinessPlan>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { data, error } = await supabase
       .from('business_plans')
       .update({
@@ -132,6 +186,14 @@ export const updateBusinessPlan = async (id: string, updates: Partial<BusinessPl
 
 export const deleteBusinessPlan = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { error } = await supabase
       .from('business_plans')
       .delete()
@@ -154,12 +216,21 @@ export const deleteBusinessPlan = async (id: string) => {
 // Blog Posts Management
 export const createBlogPost = async (blogPost: Omit<BlogPost, 'id' | 'created_at' | 'updated_at'>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { data, error } = await supabase
       .from('blog_posts')
       .insert([{
         ...blogPost,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        author_id: currentUser.id
       }])
       .select();
 
@@ -180,6 +251,14 @@ export const createBlogPost = async (blogPost: Omit<BlogPost, 'id' | 'created_at
 
 export const updateBlogPost = async (id: string, updates: Partial<BlogPost>) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { data, error } = await supabase
       .from('blog_posts')
       .update({
@@ -187,6 +266,7 @@ export const updateBlogPost = async (id: string, updates: Partial<BlogPost>) => 
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('author_id', currentUser.id)
       .select();
 
     if (error) throw error;
@@ -206,10 +286,19 @@ export const updateBlogPost = async (id: string, updates: Partial<BlogPost>) => 
 
 export const deleteBlogPost = async (id: string) => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        message: 'User not authenticated'
+      };
+    }
+
     const { error } = await supabase
       .from('blog_posts')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('author_id', currentUser.id);
 
     if (error) throw error;
 

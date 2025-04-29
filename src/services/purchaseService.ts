@@ -161,7 +161,7 @@ export const checkPurchaseStatus = async (userId: string, itemType: string, item
           success: true,
           purchased: isPurchased,
           data: isPurchased ? {
-            id: `purchase-${itemId}`,
+            id: '00000000-0000-0000-0000-000000000001', // Valid UUID format
             user_id: userId,
             item_type: itemType,
             item_id: itemId,

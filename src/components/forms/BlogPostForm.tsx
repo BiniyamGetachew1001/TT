@@ -137,8 +137,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-200">
+        <div className="space-y-1 md:col-span-2">
+          <label htmlFor="title" className="block text-sm font-medium text-white">
             Title <span className="text-red-400">*</span>
           </label>
           <input
@@ -152,8 +152,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="category" className="block text-sm font-medium text-gray-200">
+        <div className="space-y-1">
+          <label htmlFor="category" className="block text-sm font-medium text-white">
             Category <span className="text-red-400">*</span>
           </label>
           <select
@@ -171,8 +171,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           {errors.category && <p className="text-red-400 text-xs mt-1">{errors.category}</p>}
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="status" className="block text-sm font-medium text-gray-200">
+        <div className="space-y-1">
+          <label htmlFor="status" className="block text-sm font-medium text-white">
             Status
           </label>
           <select
@@ -188,8 +188,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
           </select>
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="cover_image" className="block text-sm font-medium text-gray-200">
+        <div className="space-y-1 md:col-span-2">
+          <label htmlFor="cover_image" className="block text-sm font-medium text-white">
             Cover Image URL
           </label>
           <input
@@ -204,8 +204,8 @@ const BlogPostForm: React.FC<BlogPostFormProps> = ({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="content" className="block text-sm font-medium text-gray-200">
+      <div className="space-y-1">
+        <label htmlFor="content" className="block text-sm font-medium text-white">
           Content <span className="text-red-400">*</span>
         </label>
         <textarea
